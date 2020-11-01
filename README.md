@@ -7,6 +7,7 @@
 - ```scripts/``` - directory for custom shell scripts
 
 ## use 
-- make directory ```build/```
-- run ```cmake ../ && make``` from ```build/``` folder. this shall create ???
+- run ```# ./install-deps.sh``` from ```scripts/``` directory to install all prerequisites
+- make directory ```build/``` in project folder
+- run ```cmake ../ && make -j``` from ```build/``` folder. this shall create ???
 FIXME: add adequate description

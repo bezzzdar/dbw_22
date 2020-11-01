@@ -1,6 +1,11 @@
+# extensions
 *.o
 *.bin
-build/
+
+# folders
+lib/
+*build/
+
+# files
 .vscode
-clang-format
 
