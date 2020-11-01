@@ -26,7 +26,7 @@ then
 	sudo pacman -Syu cmake make gcc mysql binutils openssl boost zlib curl
 elif [[ ${pac_man} == "apt-get" ]]
 then
-	sudo apt-get install cmake make gcc mysql
+	sudo apt-get install cmake make gcc mysql libssl-dev libboost-system-dev zlib1g-dev libcurl4-openssl-dev
 elif [[ ${pac_man} == "dnf" ]]
 then 
 	sudo dnf install cmake make gcc mysql
