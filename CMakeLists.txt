@@ -4,4 +4,3 @@ project(tg-bot)
 
 add_subdirectory(src)
 add_subdirectory(db)
-add_subdirectory(scripts)
