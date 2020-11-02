@@ -43,8 +43,23 @@ fi
 cd ../
 mkdir -p lib/
 cd lib/
+
+# tg-bot lib
 git clone https://github.com/reo7sp/tgbot-cpp
 cd tgbot-cpp
 cmake .
 make -j4
 sudo make install
+
+cd ../
+
+# mysql lib
+git clone https://github.com/mysql/mysql-connector-cpp.git
+cd mysql-connector-cpp
+cmake . -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_INSTALL_LIBDIR=lib
+cmake --build . --config Release
+sudo cmake --build . --target install --config Release
+
+sd ../
+
+sd ../build
