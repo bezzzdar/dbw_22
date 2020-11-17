@@ -1,4 +1,3 @@
-// #include <stdio.h>
 #include <tgbot/tgbot.h>
 
 // int main() {
@@ -33,92 +32,58 @@
 #include <iostream>
 #include <mysqlx/xdevapi.h>
 
-using ::std::cout;
-using ::std::endl;
+#include <mysql-cppconn-8/mysql/jdbc.h>
+// #include <cppconn/driver.h>
+// #include <cppconn/exception.h>
+// #include <cppconn/resultset.h>
+// #include <cppconn/statement.h>
+
+constexpr char* USER     = "user@bot.babay.ru";
+constexpr char* HOSTNAME = "tcp://bot.babay.ru:3306";
+constexpr char* PWD      = "passwd";
+
+constexpr char* USER_LOCAL     = "root";
+constexpr char* HOSTNAME_LOCAL = "tcp://LAPTOP-E950M0TH:3306";
+constexpr char* PWD_LOCAL      = "vov19411945_qW";
+
 using namespace ::mysqlx;
 
 int main(int argc, const char* argv[]) try {
+    sql::Driver*     driver;
+    sql::Connection* con;
+    sql::Statement*  stmt;
+    sql::ResultSet*  res;
 
-    // const char* url = (argc > 1 ? argv[1] : "mysqlx://");
+    driver = get_driver_instance();
 
-    // cout << "Creating session on " << url << " ..." << endl;
+    // con = driver->connect(HOSTNAME_LOCAL, USER_LOCAL, PWD_LOCAL);
+    con = driver->connect(HOSTNAME, USER, PWD);
 
-    // Session sess(url);
+    con->setSchema("dialogue2020");
 
-    Session sess("kompuhter", 33060, "root", "../db/db.sql", "dialogue2020");
+    stmt = con->createStatement();
+    res  = stmt->executeQuery("SELECT 'Hello World!' AS _message");
 
-    cout << "Session accepted, creating collection..." << endl;
-
-    Schema     sch  = sess.getSchema("test");
-    Collection coll = sch.createCollection("c1", true);
-
-    cout << "Inserting documents..." << endl;
-
-    coll.remove("true").execute();
-
-    {
-        DbDoc doc(R"({ "name": "foo", "age": 1 })");
-
-        Result add = coll.add(doc)
-                         .add(R"({ "name": "bar", "age": 2, "toys": [ "car", "ball" ] })")
-                         .add(R"({ "name": "bar", "age": 2, "toys": [ "car", "ball" ] })")
-                         .add(R"({
-                 "name": "baz",
-                  "age": 3,
-                 "date": { "day": 20, "month": "Apr" }
-              })")
-                         .add(R"({ "_id": "myuuid-1", "name": "foo", "age": 7 })")
-                         .execute();
-
-        std::list<string> ids = add.getGeneratedIds();
-        for (string id : ids)
-            cout << "- added doc with id: " << id << endl;
+    while (res->next()) {
+        std::cout << "\t... MySQL replies: ";
+        std::cout << res->getString("_message") << std::endl;
     }
 
-    cout << "Fetching documents..." << endl;
+    delete res;
+    delete stmt;
+    delete con;
 
-    DocResult docs = coll.find("age > 1 and name like 'ba%'").execute();
-
-    int i = 0;
-    for (DbDoc doc : docs) {
-        cout << "doc#" << i++ << ": " << doc << endl;
-
-        for (Field fld : doc) {
-            cout << " field `" << fld << "`: " << doc[fld] << endl;
-        }
-
-        string name = doc["name"];
-        cout << " name: " << name << endl;
-
-        if (doc.hasField("date") && Value::DOCUMENT == doc.fieldType("date")) {
-            cout << "- date field" << endl;
-            DbDoc date = doc["date"];
-            for (Field fld : date) {
-                cout << "  date `" << fld << "`: " << date[fld] << endl;
-            }
-            string month = doc["date"]["month"];
-            int    day   = date["day"];
-            cout << "  month: " << month << endl;
-            cout << "  day: " << day << endl;
-        }
-
-        if (doc.hasField("toys") && Value::ARRAY == doc.fieldType("toys")) {
-            cout << "- toys:" << endl;
-            for (auto toy : doc["toys"]) {
-                cout << "  " << toy << endl;
-            }
-        }
-
-        cout << endl;
-    }
-    cout << "Done!" << endl;
-} catch (const mysqlx::Error& err) {
-    cout << "ERROR: " << err << endl;
-    return 1;
+    std::cout << "done!" << std::endl;
+} catch (sql::SQLException& e) {
+    std::cout << "# ERR: SQLException in " << __FILE__;
+    std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
+    std::cout << "# ERR: " << e.what();
+    std::cout << " (MySQL error code: " << e.getErrorCode();
+    std::cout << ", SQLState: " << e.getSQLState() << " )" << std::endl;
 } catch (std::exception& ex) {
-    cout << "STD EXCEPTION: " << ex.what() << endl;
+    std::cout << "STD EXCEPTION: " << ex.what() << std::endl;
     return 1;
 } catch (const char* ex) {
-    cout << "EXCEPTION: " << ex << endl;
+    std::cout << "EXCEPTION: " << ex << std::endl;
     return 1;
 }
