@@ -1,7 +1,7 @@
 #include <tgbot/tgbot.h>
 
 // int main() {
-//     // TgBot::Bot bot("1417068350:AAGHSRRvimiHNWIMgboNm1xUr99D_7-X8gE");
+//     // TgBot::Bot bot("");
 
 //     // bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
 //     //     bot.getApi().sendMessage(message->chat->id, "Hi!");
@@ -38,13 +38,13 @@
 // #include <cppconn/resultset.h>
 // #include <cppconn/statement.h>
 
-constexpr char* USER     = "user@bot.babay.ru";
-constexpr char* HOSTNAME = "tcp://bot.babay.ru:3306";
-constexpr char* PWD      = "passwd";
+constexpr char* USER     = "";
+constexpr char* HOSTNAME = "";
+constexpr char* PWD      = "";
 
-constexpr char* USER_LOCAL     = "root";
-constexpr char* HOSTNAME_LOCAL = "tcp://LAPTOP-E950M0TH:3306";
-constexpr char* PWD_LOCAL      = "vov19411945_qW";
+constexpr char* USER_LOCAL     = "";
+constexpr char* HOSTNAME_LOCAL = "";
+constexpr char* PWD_LOCAL      = "";
 
 using namespace ::mysqlx;
 
@@ -59,7 +59,7 @@ int main(int argc, const char* argv[]) try {
     // con = driver->connect(HOSTNAME_LOCAL, USER_LOCAL, PWD_LOCAL);
     con = driver->connect(HOSTNAME, USER, PWD);
 
-    con->setSchema("dialogue2020");
+    con->setSchema("");
 
     stmt = con->createStatement();
     res  = stmt->executeQuery("SELECT 'Hello World!' AS _message");
