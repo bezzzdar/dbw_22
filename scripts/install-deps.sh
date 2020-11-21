@@ -1,3 +1,4 @@
+#!/bin/bash
 declare -A os_to_pac_man;
 
 os_to_pac_man[/etc/arch-release]=pacman		# archlinux
@@ -28,7 +29,7 @@ then
 elif [[ ${pac_man} == "apt-get" ]]
 then
 	echo -e "\033[1;32m OS identified as debian-like, using apt-get to install...\033[0m"
-	sudo apt-get install cmake make gcc mysql libssl-dev libboost-system-dev zlib1g-dev libcurl4-openssl-dev
+	sudo apt-get install cmake make gcc mysql libssl-dev libboost-system-dev zlib1g-dev libcurl4-openssl-dev libssl-dev libboost-all-dev
 elif [[ ${pac_man} == "dnf" ]]
 then 
 	echo -e "\033[1;32m OS identified as fedora or another red hat product, using dnf to install...\033[0m"
@@ -41,7 +42,7 @@ fi
 # installing needed libraries
 
 cd ../
-mkdir -p lib/
+mkdir -m 777 lib/
 cd lib/
 
 # tg-bot lib
@@ -56,10 +57,10 @@ cd ../
 # mysql lib
 git clone https://github.com/mysql/mysql-connector-cpp.git
 cd mysql-connector-cpp
-cmake . -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_INSTALL_LIBDIR=lib
-cmake --build . --config Release
-sudo cmake --build . --target install --config Release
+cmake . 
+cmake --build . 
+sudo cmake --build . --target install
 
-sd ../
+cd ../
 
-sd ../build
+cd ../scripts
