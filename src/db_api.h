@@ -5,7 +5,32 @@
 #include <mysql-cppconn-8/mysql/jdbc.h>
 #include <mysqlx/xdevapi.h>
 
+#include <map>
+#include <string>
+
 namespace db_api {
+enum Disciplines {
+    phy,
+    math,
+    rus,
+    bio,
+    cod,
+    gen,
+    hist,
+    chem,
+    soc,
+};
+
+const std::map<Disciplines, const char*> discipline_to_string{{phy, "phy"},
+                                                              {math, "math"},
+                                                              {rus, "rus"},
+                                                              {bio, "bio"},
+                                                              {cod, "cod"},
+                                                              {gen, "gen"},
+                                                              {hist, "hist"},
+                                                              {chem, "chem"},
+                                                              {soc, "soc"}};
+
 class Connector {
   public:
     Connector() = delete;
@@ -17,6 +42,8 @@ class Connector {
             con_ = driver_->connect(hostname, username, password);
 
             con_->setSchema(db_name);
+
+            stmt_ = con_->createStatement();
         } catch (sql::SQLException& e) {
             std::cerr << "# ERR: SQLException in " << __FILE__;
             std::cerr << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
@@ -31,16 +58,21 @@ class Connector {
     }
 
     ~Connector() {
-        delete res_;
         delete stmt_;
         delete con_;
     }
+
+    // return - user id or -1 if error occurs
+    int AddUser(std::string name, int school_n);
+    int RemoveUser(int user_id);
+    int CheckUserAnswer(int user_id, std::string answer);
+    int RequestUserTask(int user_id, Disciplines discipline);
+    int RequestUserScore(int user_id);
 
   private:
     sql::Driver*     driver_;
     sql::Connection* con_;
     sql::Statement*  stmt_;
-    sql::ResultSet*  res_;
 };
 }; // namespace db_api
 
