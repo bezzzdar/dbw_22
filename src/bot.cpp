@@ -8,7 +8,6 @@
 #include <sstream>
 #include <vector>
 
-#include "bot_api.h"
 #include "bot_utils.h"
 #include "db_api.h"
 
@@ -63,36 +62,36 @@ int main() {
     phy->callbackData = "phy";
 
     TgBot::InlineKeyboardButton::Ptr bio(new TgBot::InlineKeyboardButton);
-    phy->text = "биология";
-    phy->callbackData = "bio";
+    bio->text = "биология";
+    bio->callbackData = "bio";
 
     TgBot::InlineKeyboardButton::Ptr rus(new TgBot::InlineKeyboardButton);
-    phy->text = "русский";
-    phy->callbackData = "rus";
+    rus->text = "русский";
+    rus->callbackData = "rus";
 
     TgBot::InlineKeyboardButton::Ptr cod(new TgBot::InlineKeyboardButton);
-    phy->text = "кодинг";
-    phy->callbackData = "cod";
+    cod->text = "кодинг";
+    cod->callbackData = "cod";
 
     TgBot::InlineKeyboardButton::Ptr hist(new TgBot::InlineKeyboardButton);
-    phy->text = "история";
-    phy->callbackData = "hist";
+    hist->text = "история";
+    hist->callbackData = "hist";
 
     TgBot::InlineKeyboardButton::Ptr chem(new TgBot::InlineKeyboardButton);
-    phy->text = "химия";
-    phy->callbackData = "chem";
+    chem->text = "химия";
+    chem->callbackData = "chem";
 
     TgBot::InlineKeyboardButton::Ptr gen(new TgBot::InlineKeyboardButton);
-    phy->text = "общие";
-    phy->callbackData = "gen";
+    gen->text = "общие";
+    gen->callbackData = "gen";
 
     TgBot::InlineKeyboardButton::Ptr soc(new TgBot::InlineKeyboardButton);
-    phy->text = "обществознание";
-    phy->callbackData = "soc";
+    soc->text = "обществознание";
+    soc->callbackData = "soc";
 
     TgBot::InlineKeyboardButton::Ptr math(new TgBot::InlineKeyboardButton);
-    phy->text = "математика";
-    phy->callbackData = "math";
+    math->text = "математика";
+    math->callbackData = "math";
 
     disciplines_row0.push_back(phy);
     disciplines_row0.push_back(bio);
@@ -121,8 +120,8 @@ int main() {
     choose->text = "выбрать тему";
     choose->callbackData = "choose";
 
-    tasks_row0.push_back(phy);
-    tasks_row0.push_back(bio);
+    tasks_row0.push_back(next);
+    tasks_row0.push_back(choose);
 
     tasks_keyboard->inlineKeyboard.push_back(tasks_row0);
 
@@ -146,22 +145,103 @@ int main() {
 
     // buttons
 
-    bot.getEvents().onCallbackQuery(
-        [&bot, &disciplines_keyboard, &tasks_keyboard](TgBot::CallbackQuery::Ptr query) {
-            std::stringstream reply;
+    bot.getEvents().onCallbackQuery([&bot, &tasks_keyboard, &disciplines_keyboard, &state_flag](
+                                        TgBot::CallbackQuery::Ptr query) {
+        // TODO: add code generation / define to avoid this copy-paste
+        std::string query_data = query->data;
+        const auto chat_id = query->message->chat->id;
 
-            if (StringTools::startsWith(query->data, "phy")) {
+        bool can_choose_discipline = state_flag >= BotState::NO_DISCIPLINE_CHOSEN;
+        bool is_answering_question = state_flag > BotState::NO_DISCIPLINE_CHOSEN;
 
-                bot.getApi().sendMessage(
-                    query->message->chat->id, reply.str(), false, 0, tasks_keyboard);
+        std::stringstream reply;
+        db_api::Disciplines discipline = db_api::Disciplines::NONE;
+
+        if (can_choose_discipline) {
+            if (StringTools::startsWith(query_data, "phy")) {
+                state_flag = BotState::PHY_CHOSEN;
+
+                reply << "Раздел физика:";
+
+                discipline = db_api::Disciplines::PHY;
+            } else if (StringTools::startsWith(query_data, "bio")) {
+                state_flag = BotState::BIO_CHOSEN;
+
+                reply << "Раздел биология:";
+
+                discipline = db_api::Disciplines::BIO;
+            } else if (StringTools::startsWith(query_data, "rus")) {
+                state_flag = BotState::RUS_CHOSEN;
+
+                reply << "Раздел русский:";
+
+                discipline = db_api::Disciplines::RUS;
+            } else if (StringTools::startsWith(query_data, "cod")) {
+                state_flag = BotState::COD_CHOSEN;
+
+                reply << "Раздел кодинг:";
+
+                discipline = db_api::Disciplines::COD;
+            } else if (StringTools::startsWith(query_data, "hist")) {
+                state_flag = BotState::HIST_CHOSEN;
+
+                reply << "Раздел история:";
+
+                discipline = db_api::Disciplines::HIST;
+            } else if (StringTools::startsWith(query_data, "chem")) {
+                state_flag = BotState::CHEM_CHOSEN;
+
+                reply << "Раздел химия:";
+
+                discipline = db_api::Disciplines::CHEM;
+            } else if (StringTools::startsWith(query_data, "gen")) {
+                state_flag = BotState::GEN_CHOSEN;
+
+                reply << "Раздел общие вопросы:";
+
+                discipline = db_api::Disciplines::GEN;
+            } else if (StringTools::startsWith(query_data, "soc")) {
+                state_flag = BotState::SOC_CHOSEN;
+
+                reply << "Раздел обществознание:";
+
+                discipline = db_api::Disciplines::SOC;
+            } else if (StringTools::startsWith(query_data, "math")) {
+                state_flag = BotState::MATH_CHOSEN;
+
+                reply << "Раздел математика:";
+
+                discipline = db_api::Disciplines::MATH;
             }
 
-            // TODO: add buttons
-        });
+            // TODO: add actual question query
+            if (discipline != db_api::Disciplines::NONE) {
+                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+            }
+        }
+
+        if (is_answering_question) {
+            if (StringTools::startsWith(query_data, "next")) {
+
+                reply << "Хорошо, вот другой вопрос:";
+
+                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+            } else if (StringTools::startsWith(query_data, "choose")) {
+                reply << "Хорошо, выбери другую тему:";
+
+                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+
+                state_flag = BotState::NO_DISCIPLINE_CHOSEN;
+            }
+        }
+
+        return;
+    });
 
     // main logic
     bot.getEvents().onNonCommandMessage(
-        [&bot, &state_flag, &conn, &chat_id_to_user_info](const TgBot::Message::Ptr& message) {
+        [&bot, &state_flag, &conn, &chat_id_to_user_info, &disciplines_keyboard, &tasks_keyboard](
+            const TgBot::Message::Ptr& message) {
             const auto chat_id = message->chat->id;
             auto message_text = message->text;
             std::cout << "user in chat " << chat_id << " wrote:\n<" << message_text << ">\n";
@@ -173,16 +253,10 @@ int main() {
                 bot.getApi().sendMessage(chat_id, "Чтобы начать, пожалуйста, введи команду /start");
                 break;
             case REGISTERING_NAME:
-                reply << "Я распознал твое имя как \'" << message_text << "\'\n";
-                message_text = bot_utils::ToLowerNoSpaces(message_text);
+                reply << "Я распознал твое имя как\n\'" << message_text << "\'\n";
 
                 bool is_duplicate;
-                is_duplicate = false;
-                for (const auto& user : chat_id_to_user_info) {
-                    if (user.second.name == message_text) {
-                        is_duplicate = true;
-                    }
-                }
+                is_duplicate = conn.UsernameTaken(message_text);
 
                 if (is_duplicate) {
                     reply << "Так вышло, что такого человека уже зарегистрировали. Попробуй "
@@ -190,7 +264,7 @@ int main() {
                 } else if (bot_utils::IsValidName(message_text)) {
                     reply << "Уверен, что хочешь оставить его таким?\nДа/Нет";
 
-                    chat_id_to_user_info[chat_id].name = message_text;
+                    chat_id_to_user_info[chat_id].name = bot_utils::ToLowerNoSpaces(message_text);
 
                     state_flag = BotState::REGISTERING_NAME_CONF;
                 } else {
@@ -205,8 +279,8 @@ int main() {
 
                 if (message_text == "да") {
                     reply << "Здорово, теперь введи номер своей школы. Только цифру, пожалуйста."
-                             "Если в названии не только цифра, организаторы присвоили этой школе "
-                             "какой-то номер, спроси у них, какой";
+                             "Если в названии не только цифра, организаторы присвоили этой школе"
+                             "какой-то номер, спроси у них, какой ";
                     state_flag = REGISTERING_SCHOOL;
                 } else if (message_text == "нет") {
                     reply << "Здорово, тогда введи свое имя заново, пожалуйста";
@@ -263,14 +337,19 @@ int main() {
 
                     chat_id_to_user_info[chat_id].user_id = conn.AddUser(info.name, info.school);
 
-                    reply << "Здорово, ты зарегистрирован под именем " << info.name << " из школы №"
-                          << info.school << "твой id: " << chat_id_to_user_info[chat_id].user_id;
+                    reply << "Здорово, ты зарегистрирован под именем " << info.name
+                          << " из школы № " << info.school
+                          << "\nтвой id: " << chat_id_to_user_info[chat_id].user_id << "\n";
 
                     state_flag = NO_DISCIPLINE_CHOSEN;
 
-                    // FIXME: add transition to the disciplines section
-                    // bot.getApi().sendMessage(chat_id, reply.str());
+                    reply << "Теперь выбери, какие вопросы ты хочешь решать. Категорию можно "
+                             "изменить в любой момент, так что не бойся экспериментировать\n";
 
+                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+
+                    // FIXME: add transition to the disciplines section
+                    return;
                 } else if (message_text == "нет") {
                     reply << "Здорово, тогда введи свою школу заново, пожалуйста";
                     state_flag = BotState::REGISTERING_SCHOOL;
@@ -282,7 +361,9 @@ int main() {
                 bot.getApi().sendMessage(chat_id, reply.str());
                 break;
             case NO_DISCIPLINE_CHOSEN:
-                // TODO:
+                reply << "Жмякни на кнопку с интересующей тебя категорией, пожалуйста";
+
+                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
                 break;
             case PHY_CHOSEN:
                 // TODO:
@@ -315,6 +396,8 @@ int main() {
                 // TODO:
                 break;
             }
+
+            return;
         });
     try {
         printf("Bot username: %s\n", bot.getApi().getMe()->username.c_str());

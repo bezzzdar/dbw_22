@@ -10,26 +10,30 @@
 
 namespace db_api {
 enum Disciplines {
-    phy,
-    math,
-    rus,
-    bio,
-    cod,
-    gen,
-    hist,
-    chem,
-    soc,
+    PHY,
+    MATH,
+    RUS,
+    BIO,
+    COD,
+    GEN,
+    HIST,
+    CHEM,
+    SOC,
+    NONE,
 };
 
-const std::map<Disciplines, const char*> discipline_to_string{{phy, "phy"},
-                                                              {math, "math"},
-                                                              {rus, "rus"},
-                                                              {bio, "bio"},
-                                                              {cod, "cod"},
-                                                              {gen, "gen"},
-                                                              {hist, "hist"},
-                                                              {chem, "chem"},
-                                                              {soc, "soc"}};
+const std::map<Disciplines, const char*> discipline_to_string{
+    {PHY, "phy"},
+    {MATH, "math"},
+    {RUS, "rus"},
+    {BIO, "bio"},
+    {COD, "cod"},
+    {GEN, "gen"},
+    {HIST, "hist"},
+    {CHEM, "chem"},
+    {SOC, "soc"},
+    {NONE, "none"},
+};
 
 class Connector {
   public:
@@ -62,17 +66,17 @@ class Connector {
         delete con_;
     }
 
-    // return - user id or -1 if error occurs
     int AddUser(std::string name, int school_n);
+    bool UsernameTaken(std::string name);
     int RemoveUser(int user_id);
     int CheckUserAnswer(int user_id, std::string answer);
-    int RequestUserTask(int user_id, Disciplines discipline);
+    int RequestUserTask(int user_id, Disciplines discipline, int type = 0);
     int RequestUserScore(int user_id);
 
   private:
-    sql::Driver*     driver_;
+    sql::Driver* driver_;
     sql::Connection* con_;
-    sql::Statement*  stmt_;
+    sql::Statement* stmt_;
 };
 }; // namespace db_api
 
