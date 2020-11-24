@@ -66,17 +66,22 @@ class Connector {
         delete con_;
     }
 
-    int AddUser(std::string name, int school_n);
-    bool UsernameTaken(std::string name);
-    int RemoveUser(int user_id);
-    int CheckUserAnswer(int user_id, std::string answer);
-    int RequestUserTask(int user_id, Disciplines discipline, int type = 0);
-    int RequestUserScore(int user_id);
+    int  AddUser(const std::string& name, const int school_n);
+    bool UsernameTaken(const std::string& name);
+    void  RemoveUser(const int user_id);
+    bool CheckUserAnswer(const int user_id, const Disciplines& discipline,
+                         const std::string& answer);
+    // FIXME: if images are added, needs to be reworked
+    std::string RequestUserTask(const int user_id, const Disciplines& discipline, const int type = 0);
+    int RequestUserNumberDiscipline(const int user_id, const Disciplines& discipline);
+    void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline, /* out */ bool* no_more = nullptr);
+
+    int RequestUserScore(const int user_id);
 
   private:
-    sql::Driver* driver_;
+    sql::Driver*     driver_;
     sql::Connection* con_;
-    sql::Statement* stmt_;
+    sql::Statement*  stmt_;
 };
 }; // namespace db_api
 
