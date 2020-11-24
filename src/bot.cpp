@@ -351,7 +351,13 @@ int main() {
             try {
                 school_n = std::stoi(message_text);
 
-                is_valid_n = true;
+                if (school_n < 0) {
+                    reply << "Уверен, школы с таким номером нет";
+
+                    is_valid_n = false;
+                } else {
+                    is_valid_n = true;
+                }
             } catch (const std::invalid_argument& inv_arg) {
                 reply << "Пожалуйста, введи только номер школы. Только цифры";
 
