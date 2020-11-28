@@ -18,21 +18,19 @@ const char* PWD_LOCAL = "vov19411945_qW";
 const char* BOT_TOKEN = "1417068350:AAGHSRRvimiHNWIMgboNm1xUr99D_7-X8gE";
 
 enum BotState {
-    NO_STATE,                // current user is unknown
-    REGISTERING_NAME,        // waiting for name input
-    REGISTERING_NAME_CONF,   // waiting for name confirmation
-    REGISTERING_SCHOOL,      // waiting for school number
-    REGISTERING_SCHOOL_CONF, // waiting for school number confirmation
-    NO_DISCIPLINE_CHOSEN,    // waiting for discipline choise
-    PHY_CHOSEN,              // waiting for answer
-    BIO_CHOSEN,              // waiting for answer
-    RUS_CHOSEN,              // waiting for answer
-    COD_CHOSEN,              // waiting for answer
-    HIST_CHOSEN,             // waiting for answer
-    CHEM_CHOSEN,             // waiting for answer
-    GEN_CHOSEN,              // waiting for answer
-    SOC_CHOSEN,              // waiting for answer
-    MATH_CHOSEN,             // waiting for answer
+    NO_STATE,             // current user is unknown
+    REGISTERING_NAME,     // waiting for name input
+    REGISTERING_SCHOOL,   // waiting for school number
+    NO_DISCIPLINE_CHOSEN, // waiting for discipline choise
+    PHY_CHOSEN,           // waiting for answer
+    BIO_CHOSEN,           // waiting for answer
+    RUS_CHOSEN,           // waiting for answer
+    COD_CHOSEN,           // waiting for answer
+    HIST_CHOSEN,          // waiting for answer
+    CHEM_CHOSEN,          // waiting for answer
+    GEN_CHOSEN,           // waiting for answer
+    SOC_CHOSEN,           // waiting for answer
+    MATH_CHOSEN,          // waiting for answer
 };
 
 struct UserInfo {
@@ -137,7 +135,7 @@ int main() {
 
         std::stringstream reply;
 
-        if (chat_id_to_user_info[chat_id].state < BotState::REGISTERING_NAME_CONF) {
+        if (chat_id_to_user_info[chat_id].state < BotState::REGISTERING_NAME) {
             reply << "Привет! Скажи имя, под которым ты хочешь, чтобы я тебя "
                      "зарегистрировал\nНапример, Вася Васечкин";
 
@@ -295,7 +293,11 @@ int main() {
         const auto chat_id = message->chat->id;
         auto       message_text = message->text;
 
-        std::cout << "user in chat " << chat_id << " wrote:\n<" << message_text << ">\n";
+        const auto user_info = chat_id_to_user_info[chat_id];
+        const auto user_id = user_info.user_id;
+
+        std::cout << "user <" << user_info.name << "> in chat " << chat_id << " wrote:\n<"
+                  << message_text << ">\n";
 
         db_api::Disciplines current_discipline = db_api::Disciplines::NONE;
 
@@ -306,8 +308,6 @@ int main() {
             bot.getApi().sendMessage(chat_id, "Чтобы начать, пожалуйста, введи команду /start");
             break;
         case REGISTERING_NAME:
-            reply << "Я распознал твое имя как\n\'" << message_text << "\'\n";
-
             bool is_duplicate;
             is_duplicate = conn.UsernameTaken(message_text);
 
@@ -315,33 +315,17 @@ int main() {
                 reply << "Так вышло, что такого человека уже зарегистрировали. Попробуй "
                          "добавить отчество, или обратись к организаторам";
             } else if (bot_utils::IsValidName(message_text)) {
-                reply << "Уверен, что хочешь оставить его таким?\nДа/Нет";
+                reply << "Привет, " << message_text
+                      << "\nТеперь введи номер своей школы. Только цифру, пожалуйста."
+                         "Если в названии не только цифра, организаторы присвоили этой школе "
+                         "какой-то номер, спроси у них, какой";
 
                 chat_id_to_user_info[chat_id].name = bot_utils::ToLowerNoSpaces(message_text);
 
-                chat_id_to_user_info[chat_id].state = BotState::REGISTERING_NAME_CONF;
+                chat_id_to_user_info[chat_id].state = BotState::REGISTERING_SCHOOL;
             } else {
                 reply << "...\nА теперь без шуток, пожалуйста";
             };
-
-            bot.getApi().sendMessage(chat_id, reply.str());
-
-            break;
-        case REGISTERING_NAME_CONF:
-            message_text = bot_utils::ToLowerNoSpaces(message_text);
-
-            if (message_text == "да") {
-                reply << "Здорово, теперь введи номер своей школы. Только цифру, пожалуйста."
-                         "Если в названии не только цифра, организаторы присвоили этой школе "
-                         "какой-то номер, спроси у них, какой ";
-                chat_id_to_user_info[chat_id].state = REGISTERING_SCHOOL;
-            } else if (message_text == "нет") {
-                reply << "Здорово, тогда введи свое имя заново, пожалуйста";
-                chat_id_to_user_info[chat_id].state = BotState::REGISTERING_NAME;
-            } else {
-                reply << "Что то странное, я не понял, что ты написал. Введи, пожалуйста, "
-                         "ответ еще раз";
-            }
 
             bot.getApi().sendMessage(chat_id, reply.str());
 
@@ -363,41 +347,18 @@ int main() {
 
                 is_valid_n = false;
             } catch (const std::out_of_range& oor) {
-                reply << "Уверен, школы с таким номером нет";
+                reply << "Столько школ во всем мире не наберется";
 
                 is_valid_n = false;
             }
 
             if (is_valid_n) {
-                reply << "Я распознал твою школу  как \'";
-                switch (school_n) {
-                // FIXME: add specific schools like liceum, etc
-                default:
-                    reply << school_n;
-                    break;
-                }
-                reply << "\'\nТы уверен, что это твоя школа?\nДа/Нет";
+                reply << "Здорово, ты успешно зарегистрирован как ученик школы № "
+                      << user_info.school << "\n";
 
                 chat_id_to_user_info[chat_id].school = school_n;
-                chat_id_to_user_info[chat_id].state = BotState::REGISTERING_SCHOOL_CONF;
-            }
-
-            bot.getApi().sendMessage(chat_id, reply.str());
-
-            break;
-        case REGISTERING_SCHOOL_CONF:
-            message_text = bot_utils::ToLowerNoSpaces(message_text);
-
-            if (message_text == "да") {
-                const auto info = chat_id_to_user_info[chat_id];
-
-                chat_id_to_user_info[chat_id].user_id = conn.AddUser(info.name, info.school);
-
-                reply << "Здорово, ты зарегистрирован под именем " << info.name << " из школы № "
-                      << info.school << "\nтвой id: " << chat_id_to_user_info[chat_id].user_id
-                      << "\n";
-
-                chat_id_to_user_info[chat_id].state = NO_DISCIPLINE_CHOSEN;
+                chat_id_to_user_info[chat_id].user_id = conn.AddUser(user_info.name, school_n);
+                chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
 
                 reply << "Теперь выбери, какие вопросы ты хочешь решать. Категорию можно "
                          "изменить в любой момент, так что не бойся экспериментировать\n"
@@ -406,17 +367,10 @@ int main() {
                          "этого ты не сможешь!\n";
 
                 bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
-
-                return;
-            } else if (message_text == "нет") {
-                reply << "Здорово, тогда введи свою школу заново, пожалуйста";
-                chat_id_to_user_info[chat_id].state = BotState::REGISTERING_SCHOOL;
             } else {
-                reply << "Что то странное, я не понял, что ты написал. Введи, пожалуйста, "
-                         "ответ еще раз";
+                bot.getApi().sendMessage(chat_id, reply.str());
             }
 
-            bot.getApi().sendMessage(chat_id, reply.str());
             break;
         case NO_DISCIPLINE_CHOSEN:
             reply << "Жмякни на кнопку с интересующей тебя категорией, пожалуйста";
@@ -456,9 +410,6 @@ int main() {
         }
 
         if (current_discipline != db_api::Disciplines::NONE) {
-            const auto user_info = chat_id_to_user_info[chat_id];
-            const auto user_id = user_info.user_id;
-
             message_text = bot_utils::ToLowerNoSpaces(message_text);
 
             bool ans_is_correct = conn.CheckUserAnswer(user_id, current_discipline, message_text);
