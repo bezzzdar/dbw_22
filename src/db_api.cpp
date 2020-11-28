@@ -70,6 +70,8 @@ bool Connector::CheckUserAnswer(const int user_id, const Disciplines& discipline
     }
     delete (res_answer);
 
+    std::cout << "correct answer:" << answer << "\nuser answer:" << answer_user << "\n";
+
     if (answer.find(answer_user) != std::string::npos) {
         return true;
     }
