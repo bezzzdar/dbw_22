@@ -258,6 +258,8 @@ int main() {
 
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
                 } else {
+                    chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
+
                     reply << "К сожалению, больше вопросов в этой категории нет. Как то так. "
                              "Выбери другую";
 
@@ -351,12 +353,10 @@ int main() {
             try {
                 school_n = std::stoi(message_text);
 
-                if (school_n < 0) {
-                    reply << "Уверен, школы с таким номером нет";
+                is_valid_n = bot_utils::IsValidSchool(school_n);
 
-                    is_valid_n = false;
-                } else {
-                    is_valid_n = true;
+                if (!is_valid_n) {
+                    reply << "Уверен, школы с таким номером нет, шутник";
                 }
             } catch (const std::invalid_argument& inv_arg) {
                 reply << "Пожалуйста, введи только номер школы. Только цифры";
@@ -463,24 +463,16 @@ int main() {
 
             bool ans_is_correct = conn.CheckUserAnswer(user_id, current_discipline, message_text);
             if (ans_is_correct) {
-                bool no_more_questions = false;
-                conn.RegisterCorrectAnswer(user_id, current_discipline, &no_more_questions);
+                bool has_more_questions = conn.RegisterCorrectAnswer(user_id, current_discipline);
 
-                bool in_depleted_list =
-                    std::find(user_info.depleted_disciplines.begin(),
-                              user_info.depleted_disciplines.end(),
-                              current_discipline) != user_info.depleted_disciplines.end();
-
-                bool is_depleted = no_more_questions || in_depleted_list;
-
-                if (no_more_questions) {
+                if (!has_more_questions) {
                     chat_id_to_user_info[chat_id].depleted_disciplines.push_back(
                         current_discipline);
                 }
 
                 reply << "Ответ правильный, молодец!\n";
 
-                if (!is_depleted) {
+                if (has_more_questions) {
                     reply << "Вот следующее задание:\n";
                     reply << conn.RequestUserTask(user_id, current_discipline);
 
@@ -488,6 +480,8 @@ int main() {
                 } else {
                     reply << "Больше вопросов в этой категории нет. Но ты всегда можешь "
                              "попробовать другие!";
+
+                    chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
 
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
                 }

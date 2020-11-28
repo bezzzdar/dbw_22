@@ -53,14 +53,14 @@ void Connector::RemoveUser(const int user_id) {
 }
 
 bool Connector::CheckUserAnswer(const int user_id, const Disciplines& discipline,
-                                const std::string& answer_user) {
+                                const std::string& user_answer) {
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
 
-    int number_discipline = RequestUserNumberDiscipline(user_id, discipline);
+    int discipline_number = RequestUserNumberDiscipline(user_id, discipline);
 
     sql_request << "SELECT " << discipline_name << "_answer FROM dialogue2020." << discipline_name
-                << " WHERE " << discipline_name << "_id=" << number_discipline;
+                << " WHERE " << discipline_name << "_id=" << discipline_number;
 
     sql::ResultSet* res_answer = stmt_->executeQuery(sql_request.str().c_str());
 
@@ -70,10 +70,16 @@ bool Connector::CheckUserAnswer(const int user_id, const Disciplines& discipline
     }
     delete (res_answer);
 
-    std::cout << "correct answer:" << answer << "\nuser answer:" << answer_user << "\n";
+    std::vector<std::string> answers = bot_utils::Parse(answer, '@');
 
-    if (answer.find(answer_user) != std::string::npos) {
-        return true;
+    for (const auto& token : answers) {
+        std::cout << discipline_name << discipline_number << '<' << token << ">\n";
+    }
+
+    for (const auto& token : answers) {
+        if (token == user_answer) {
+            return true;
+        }
     }
 
     return false;
@@ -119,8 +125,7 @@ int Connector::RequestUserNumberDiscipline(const int user_id, const Disciplines&
     return number_discipline;
 }
 
-void Connector::RegisterCorrectAnswer(const int user_id, const Disciplines& discipline,
-                                      /* out */ bool* no_more /* = nullptr */) {
+bool Connector::RegisterCorrectAnswer(const int user_id, const Disciplines& discipline) {
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
 
@@ -134,30 +139,23 @@ void Connector::RegisterCorrectAnswer(const int user_id, const Disciplines& disc
     stmt_->execute(sql_request.str().c_str());
     sql_request.str("");
 
-    if (no_more != nullptr) {
-        sql_request << "SELECT COUNT(" << discipline_name << "_id) FROM dialogue2020."
-                    << discipline_name;
+    // check if there are more questions
+    sql_request << "SELECT COUNT(" << discipline_name << "_id) FROM dialogue2020."
+                << discipline_name;
 
-        sql::ResultSet* res_n_questions = stmt_->executeQuery(sql_request.str().c_str());
+    sql::ResultSet* res_n_questions = stmt_->executeQuery(sql_request.str().c_str());
 
-        int n_questions = 0;
-        while (res_n_questions->next()) {
-            n_questions = res_n_questions->getInt(1);
-        }
-
-        delete (res_n_questions);
-        sql_request.str("");
-
-        int number_discipline = RequestUserNumberDiscipline(user_id, discipline);
-
-        if (number_discipline > n_questions) {
-            *no_more = true;
-        } else {
-            *no_more = false;
-        }
+    int n_questions = 0;
+    while (res_n_questions->next()) {
+        n_questions = res_n_questions->getInt(1);
     }
 
-    return;
+    delete (res_n_questions);
+    sql_request.str("");
+
+    int number_discipline = RequestUserNumberDiscipline(user_id, discipline);
+
+    return number_discipline <= n_questions;
 }
 
 int Connector::RequestUserScore(const int user_id) {

@@ -74,7 +74,7 @@ class Connector {
     // FIXME: if images are added, needs to be reworked
     std::string RequestUserTask(const int user_id, const Disciplines& discipline, const int type = 0);
     int RequestUserNumberDiscipline(const int user_id, const Disciplines& discipline);
-    void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline, /* out */ bool* no_more = nullptr);
+    bool RegisterCorrectAnswer(const int user_id, const Disciplines& discipline);
 
     int RequestUserScore(const int user_id);
 

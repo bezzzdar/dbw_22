@@ -10,10 +10,14 @@
 #include <vector>
 
 namespace bot_utils {
-const std::vector<std::string> bad_words{
+const std::vector<std::string> bad_words {
     "hui",   "huy",   "хуй",   "хуе",  "хуё",   "хуя",   "хуи",   "sosi",
     "sosat", "sasi",  "sasat", "соси", "сосат", "сасат", "лох",   "пидр",
     "пидор", "пидар", "член",  "сука", "суч",   "дибил", "дебил",
+};
+
+const std::vector<int> funny_numbers {
+    69, 1488, 1337,
 };
 
 std::string ToLowerNoSpaces(const std::string& str) {
@@ -44,6 +48,29 @@ bool IsValidName(const std::string& name) {
     }
 
     return true;
+}
+
+bool IsValidSchool(const int number) {
+    for (const auto& num : funny_numbers) {
+        if (number == num) {
+            return false;
+        }
+    }
+
+    return number > 0;
+}
+
+std::vector<std::string> Parse(const std::string& s, const char delim) {
+    std::istringstream iss(s);
+    std::string        item;
+
+    std::vector<std::string> tokens{};
+
+    while (std::getline(iss, item, delim)) {
+        tokens.push_back(item);
+    }
+
+    return tokens;
 }
 }; // namespace bot_utils
 
