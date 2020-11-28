@@ -1,6 +1,8 @@
 #include "db_api.h"
 #include "bot_utils.h"
 
+#include <string>
+#include <iostream>
 #include <sstream>
 
 namespace db_api {

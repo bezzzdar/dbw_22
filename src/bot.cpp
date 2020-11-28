@@ -12,9 +12,6 @@
 #include "bot_utils.h"
 #include "db_api.h"
 
-const char* USER_LOCAL = "root";
-const char* HOSTNAME_LOCAL = "tcp://LAPTOP-E950M0TH:3306";
-const char* PWD_LOCAL = "vov19411945_qW";
 const char* BOT_TOKEN = "1417068350:AAGHSRRvimiHNWIMgboNm1xUr99D_7-X8gE";
 
 enum BotState {
@@ -48,8 +45,14 @@ struct UserInfo {
 
 void InitTasksStack(TasksStack* stack, db_api::Connector& conn);
 
-int main() {
-    db_api::Connector conn(HOSTNAME_LOCAL, USER_LOCAL, PWD_LOCAL, "dialogue2020");
+int main(int argc, char* argv[]) {
+    assert(argc == 4);
+
+    const std::string hostname(argv[1]);
+    const std::string username(argv[2]);
+    const std::string password(argv[3]);
+
+    db_api::Connector conn(hostname.c_str(), username.c_str(), password.c_str(), "dialogue2020");
 
     TgBot::Bot bot(BOT_TOKEN);
 

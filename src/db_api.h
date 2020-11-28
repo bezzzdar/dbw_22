@@ -2,8 +2,9 @@
 #define __DIALOGUE_DB_API_H_INCLUDED__
 
 #include <iostream>
-#include <mysql-cppconn-8/mysql/jdbc.h>
-#include <mysqlx/xdevapi.h>
+#include <cppconn/driver.h>
+#include <sstream>
+#include <cppconn/prepared_statement.h>
 
 #include <map>
 #include <string>

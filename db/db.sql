@@ -1,5 +1,5 @@
 DROP DATABASE dialogue2020;
-CREATE DATABASE dialogue2020;
+CREATE DATABASE dialogue2020 CHARACTER SET utf8;
 USE dialogue2020;
 CREATE TABLE users (
 	user_id INTEGER auto_increment,
