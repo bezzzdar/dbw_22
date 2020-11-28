@@ -16,6 +16,12 @@ const std::vector<std::string> bad_words{
     "пидор", "пидар", "член",  "сука", "суч",   "дибил", "дебил",
 };
 
+const std::vector<int> funny_numbers{
+    69,
+    1488,
+    1337,
+};
+
 std::string ToLowerNoSpaces(const std::string& str) {
     setlocale(LC_CTYPE, "ru_RU.UTF-8");
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> converter;
@@ -45,6 +51,30 @@ bool IsValidName(const std::string& name) {
 
     return true;
 }
+
+bool IsValidSchool(const int number) {
+    for (const auto& num : funny_numbers) {
+        if (number == num) {
+            return false;
+        }
+    }
+
+    return number > 0;
+}
+
+std::vector<std::string> Parse(const std::string& s, const char delim) {
+    std::istringstream iss(s);
+    std::string        item;
+
+    std::vector<std::string> tokens{};
+
+    while (std::getline(iss, item, delim)) {
+        tokens.push_back(item);
+    }
+
+    return tokens;
+}
+
 }; // namespace bot_utils
 
 #endif
