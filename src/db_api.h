@@ -68,13 +68,13 @@ class Connector {
 
     int  AddUser(const std::string& name, const int school_n);
     bool UsernameTaken(const std::string& name);
-    void  RemoveUser(const int user_id);
-    bool CheckUserAnswer(const int user_id, const Disciplines& discipline,
-                         const std::string& answer);
+    void RemoveUser(const int user_id);
+    bool CheckAnswer(const std::string& user_answer, const Disciplines& discipline,
+                     const size_t n_task);
     // FIXME: if images are added, needs to be reworked
-    std::string RequestUserTask(const int user_id, const Disciplines& discipline, const int type = 0);
-    int RequestUserNumberDiscipline(const int user_id, const Disciplines& discipline);
-    bool RegisterCorrectAnswer(const int user_id, const Disciplines& discipline);
+    std::string RequestTask(const Disciplines& discipline, const size_t n_task);
+    void        RegisterCorrectAnswer(const int user_id, const Disciplines& discipline);
+    int         RequestNumberTasks(const Disciplines& discipline);
 
     int RequestUserScore(const int user_id);
 

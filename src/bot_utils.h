@@ -10,14 +10,16 @@
 #include <vector>
 
 namespace bot_utils {
-const std::vector<std::string> bad_words {
+const std::vector<std::string> bad_words{
     "hui",   "huy",   "хуй",   "хуе",  "хуё",   "хуя",   "хуи",   "sosi",
     "sosat", "sasi",  "sasat", "соси", "сосат", "сасат", "лох",   "пидр",
     "пидор", "пидар", "член",  "сука", "суч",   "дибил", "дебил",
 };
 
-const std::vector<int> funny_numbers {
-    69, 1488, 1337,
+const std::vector<int> funny_numbers{
+    69,
+    1488,
+    1337,
 };
 
 std::string ToLowerNoSpaces(const std::string& str) {
@@ -72,6 +74,7 @@ std::vector<std::string> Parse(const std::string& s, const char delim) {
 
     return tokens;
 }
+
 }; // namespace bot_utils
 
 #endif

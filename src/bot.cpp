@@ -33,6 +33,8 @@ enum BotState {
     MATH_CHOSEN,          // waiting for answer
 };
 
+typedef std::map<db_api::Disciplines, std::list<size_t>> TasksStack;
+
 struct UserInfo {
     std::string name = "";
     int         school = -1;
@@ -41,8 +43,10 @@ struct UserInfo {
 
     int user_id = -1;
 
-    std::list<db_api::Disciplines> depleted_disciplines{};
+    TasksStack tasks_stack;
 };
+
+void InitTasksStack(TasksStack* stack, db_api::Connector& conn);
 
 int main() {
     db_api::Connector conn(HOSTNAME_LOCAL, USER_LOCAL, PWD_LOCAL, "dialogue2020");
@@ -169,120 +173,162 @@ int main() {
     // unknown commands
 
     // buttons
-    bot.getEvents().onCallbackQuery([&bot,
-                                     &tasks_keyboard,
-                                     &disciplines_keyboard,
-                                     &chat_id_to_user_info,
-                                     &conn](TgBot::CallbackQuery::Ptr query) {
-        // TODO: add code generation / define to avoid this copy-paste
-        std::string query_data = query->data;
-        const auto  chat_id = query->message->chat->id;
+    bot.getEvents().onCallbackQuery(
+        [&bot, &tasks_keyboard, &disciplines_keyboard, &chat_id_to_user_info, &conn](
+            TgBot::CallbackQuery::Ptr query) {
+            // TODO: add code generation / define to avoid this copy-paste
+            std::string query_data = query->data;
+            const auto  chat_id = query->message->chat->id;
 
-        const auto user_info = chat_id_to_user_info[chat_id];
-        bool       can_choose_discipline = user_info.state >= BotState::NO_DISCIPLINE_CHOSEN;
-        bool       is_answering_question = user_info.state > BotState::NO_DISCIPLINE_CHOSEN;
+            auto       user_info = chat_id_to_user_info[chat_id];
+            const bool can_choose_discipline = user_info.state >= BotState::NO_DISCIPLINE_CHOSEN;
+            const bool is_answering_question = user_info.state > BotState::NO_DISCIPLINE_CHOSEN;
 
-        std::stringstream reply;
+            std::stringstream reply;
 
-        if (can_choose_discipline) {
-            db_api::Disciplines discipline = db_api::Disciplines::NONE;
+            if (can_choose_discipline) {
+                db_api::Disciplines discipline = db_api::Disciplines::NONE;
 
-            if (StringTools::startsWith(query_data, "phy")) {
-                chat_id_to_user_info[chat_id].state = BotState::PHY_CHOSEN;
+                if (StringTools::startsWith(query_data, "phy")) {
+                    chat_id_to_user_info[chat_id].state = BotState::PHY_CHOSEN;
 
-                reply << "Раздел физика:\n";
+                    reply << "Раздел физика:\n";
 
-                discipline = db_api::Disciplines::PHY;
-            } else if (StringTools::startsWith(query_data, "bio")) {
-                chat_id_to_user_info[chat_id].state = BotState::BIO_CHOSEN;
+                    discipline = db_api::Disciplines::PHY;
+                } else if (StringTools::startsWith(query_data, "bio")) {
+                    chat_id_to_user_info[chat_id].state = BotState::BIO_CHOSEN;
 
-                reply << "Раздел биология:\n";
+                    reply << "Раздел биология:\n";
 
-                discipline = db_api::Disciplines::BIO;
-            } else if (StringTools::startsWith(query_data, "rus")) {
-                chat_id_to_user_info[chat_id].state = BotState::RUS_CHOSEN;
+                    discipline = db_api::Disciplines::BIO;
+                } else if (StringTools::startsWith(query_data, "rus")) {
+                    chat_id_to_user_info[chat_id].state = BotState::RUS_CHOSEN;
 
-                reply << "Раздел русский:\n";
+                    reply << "Раздел русский:\n";
 
-                discipline = db_api::Disciplines::RUS;
-            } else if (StringTools::startsWith(query_data, "cod")) {
-                chat_id_to_user_info[chat_id].state = BotState::COD_CHOSEN;
+                    discipline = db_api::Disciplines::RUS;
+                } else if (StringTools::startsWith(query_data, "cod")) {
+                    chat_id_to_user_info[chat_id].state = BotState::COD_CHOSEN;
 
-                reply << "Раздел кодинг:\n";
+                    reply << "Раздел кодинг:\n";
 
-                discipline = db_api::Disciplines::COD;
-            } else if (StringTools::startsWith(query_data, "hist")) {
-                chat_id_to_user_info[chat_id].state = BotState::HIST_CHOSEN;
+                    discipline = db_api::Disciplines::COD;
+                } else if (StringTools::startsWith(query_data, "hist")) {
+                    chat_id_to_user_info[chat_id].state = BotState::HIST_CHOSEN;
 
-                reply << "Раздел история:\n";
+                    reply << "Раздел история:\n";
 
-                discipline = db_api::Disciplines::HIST;
-            } else if (StringTools::startsWith(query_data, "chem")) {
-                chat_id_to_user_info[chat_id].state = BotState::CHEM_CHOSEN;
+                    discipline = db_api::Disciplines::HIST;
+                } else if (StringTools::startsWith(query_data, "chem")) {
+                    chat_id_to_user_info[chat_id].state = BotState::CHEM_CHOSEN;
 
-                reply << "Раздел химия:\n";
+                    reply << "Раздел химия:\n";
 
-                discipline = db_api::Disciplines::CHEM;
-            } else if (StringTools::startsWith(query_data, "gen")) {
-                chat_id_to_user_info[chat_id].state = BotState::GEN_CHOSEN;
+                    discipline = db_api::Disciplines::CHEM;
+                } else if (StringTools::startsWith(query_data, "gen")) {
+                    chat_id_to_user_info[chat_id].state = BotState::GEN_CHOSEN;
 
-                reply << "Раздел общие вопросы:\n";
+                    reply << "Раздел общие вопросы:\n";
 
-                discipline = db_api::Disciplines::GEN;
-            } else if (StringTools::startsWith(query_data, "soc")) {
-                chat_id_to_user_info[chat_id].state = BotState::SOC_CHOSEN;
+                    discipline = db_api::Disciplines::GEN;
+                } else if (StringTools::startsWith(query_data, "soc")) {
+                    chat_id_to_user_info[chat_id].state = BotState::SOC_CHOSEN;
 
-                reply << "Раздел обществознание:\n";
+                    reply << "Раздел обществознание:\n";
 
-                discipline = db_api::Disciplines::SOC;
-            } else if (StringTools::startsWith(query_data, "math")) {
-                chat_id_to_user_info[chat_id].state = BotState::MATH_CHOSEN;
+                    discipline = db_api::Disciplines::SOC;
+                } else if (StringTools::startsWith(query_data, "math")) {
+                    chat_id_to_user_info[chat_id].state = BotState::MATH_CHOSEN;
 
-                reply << "Раздел математика:\n";
+                    reply << "Раздел математика:\n";
 
-                discipline = db_api::Disciplines::MATH;
-            }
+                    discipline = db_api::Disciplines::MATH;
+                }
 
-            if (discipline != db_api::Disciplines::NONE) {
-                // FIXME: no support for image questions
-                bool is_depleted = std::find(user_info.depleted_disciplines.begin(),
-                                             user_info.depleted_disciplines.end(),
-                                             discipline) != user_info.depleted_disciplines.end();
+                if (discipline != db_api::Disciplines::NONE) {
+                    // FIXME: no support for image questions
+                    bool is_depleted = user_info.tasks_stack[discipline].empty();
 
-                if (!is_depleted) {
-                    const auto task = conn.RequestUserTask(user_info.user_id, discipline);
+                    if (!is_depleted) {
+                        const auto task =
+                            conn.RequestTask(discipline, user_info.tasks_stack[discipline].front());
 
-                    reply << task << '\n';
+                        reply << task << '\n';
 
-                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
-                } else {
-                    chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
+                        bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+                    } else {
+                        chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
 
-                    reply << "К сожалению, больше вопросов в этой категории нет. Как то так. "
-                             "Выбери другую";
+                        reply << "К сожалению, больше вопросов в этой категории нет. Как то так. "
+                                 "Выбери другую";
 
-                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+                        bot.getApi().sendMessage(
+                            chat_id, reply.str(), false, 0, disciplines_keyboard);
+                    }
                 }
             }
-        }
 
-        if (is_answering_question) {
-            if (StringTools::startsWith(query_data, "next")) {
+            if (is_answering_question) {
+                db_api::Disciplines discipline = db_api::Disciplines::NONE;
 
-                reply << "<Функция под вопросом, пока что не работает>\n";
+                switch (user_info.state) {
+                case BotState::PHY_CHOSEN:
+                    discipline = db_api::Disciplines::PHY;
+                    break;
+                case BotState::MATH_CHOSEN:
+                    discipline = db_api::Disciplines::MATH;
+                    break;
+                case BotState::RUS_CHOSEN:
+                    discipline = db_api::Disciplines::RUS;
+                    break;
+                case BotState::BIO_CHOSEN:
+                    discipline = db_api::Disciplines::BIO;
+                    break;
+                case BotState::COD_CHOSEN:
+                    discipline = db_api::Disciplines::COD;
+                    break;
+                case BotState::GEN_CHOSEN:
+                    discipline = db_api::Disciplines::GEN;
+                    break;
+                case BotState::HIST_CHOSEN:
+                    discipline = db_api::Disciplines::HIST;
+                    break;
+                case BotState::CHEM_CHOSEN:
+                    discipline = db_api::Disciplines::CHEM;
+                    break;
+                case BotState::SOC_CHOSEN:
+                    discipline = db_api::Disciplines::SOC;
+                    break;
+                default:
+                    return;
+                }
 
-                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
-            } else if (StringTools::startsWith(query_data, "choose")) {
-                reply << "Хорошо, выбери другую тему:\n";
+                if (StringTools::startsWith(query_data, "next")) {
+                    if (user_info.tasks_stack[discipline].empty()) {
+                        return;
+                    }
 
-                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+                    reply << "Ок. Вот следующий вопрос\n";
 
-                chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
+                    chat_id_to_user_info[chat_id].tasks_stack[discipline].push_back(
+                        user_info.tasks_stack[discipline].front());
+                    chat_id_to_user_info[chat_id].tasks_stack[discipline].pop_front();
+
+                    reply << conn.RequestTask(
+                        discipline, chat_id_to_user_info[chat_id].tasks_stack[discipline].front());
+
+                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+                } else if (StringTools::startsWith(query_data, "choose")) {
+                    reply << "Хорошо, выбери другую тему:\n";
+
+                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+
+                    chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
+                }
             }
-        }
 
-        return;
-    });
+            return;
+        });
 
     // main logic
     bot.getEvents().onNonCommandMessage([&bot,
@@ -293,7 +339,7 @@ int main() {
         const auto chat_id = message->chat->id;
         auto       message_text = message->text;
 
-        const auto user_info = chat_id_to_user_info[chat_id];
+        auto       user_info = chat_id_to_user_info[chat_id];
         const auto user_id = user_info.user_id;
 
         std::cout << "user <" << user_info.name << "> in chat " << chat_id << " wrote:\n<"
@@ -353,12 +399,13 @@ int main() {
             }
 
             if (is_valid_n) {
-                reply << "Здорово, ты успешно зарегистрирован как ученик школы № "
-                      << user_info.school << "\n";
+                reply << "Здорово, ты успешно зарегистрирован как ученик школы № " << school_n
+                      << "\n";
 
                 chat_id_to_user_info[chat_id].school = school_n;
                 chat_id_to_user_info[chat_id].user_id = conn.AddUser(user_info.name, school_n);
                 chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
+                InitTasksStack(&chat_id_to_user_info[chat_id].tasks_stack, conn);
 
                 reply << "Теперь выбери, какие вопросы ты хочешь решать. Категорию можно "
                          "изменить в любой момент, так что не бойся экспериментировать\n"
@@ -412,20 +459,23 @@ int main() {
         if (current_discipline != db_api::Disciplines::NONE) {
             message_text = bot_utils::ToLowerNoSpaces(message_text);
 
-            bool ans_is_correct = conn.CheckUserAnswer(user_id, current_discipline, message_text);
-            if (ans_is_correct) {
-                bool has_more_questions = conn.RegisterCorrectAnswer(user_id, current_discipline);
+            bool ans_is_correct =
+                conn.CheckAnswer(message_text,
+                                 current_discipline,
+                                 user_info.tasks_stack[current_discipline].front());
 
-                if (!has_more_questions) {
-                    chat_id_to_user_info[chat_id].depleted_disciplines.push_back(
-                        current_discipline);
-                }
+            if (ans_is_correct) {
+                chat_id_to_user_info[chat_id].tasks_stack[current_discipline].pop_front();
+
+                conn.RegisterCorrectAnswer(user_id, current_discipline);
 
                 reply << "Ответ правильный, молодец!\n";
 
-                if (has_more_questions) {
+                if (!chat_id_to_user_info[chat_id].tasks_stack[current_discipline].empty()) {
                     reply << "Вот следующее задание:\n";
-                    reply << conn.RequestUserTask(user_id, current_discipline);
+                    reply << conn.RequestTask(
+                        current_discipline,
+                        chat_id_to_user_info[chat_id].tasks_stack[current_discipline].front());
 
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
                 } else {
@@ -458,4 +508,35 @@ int main() {
     }
 
     return 1;
+}
+
+void InitDiscipline(std::list<size_t>* tasks, const size_t n_tasks) {
+    for (size_t i = 1; i <= n_tasks; i++) {
+        tasks->push_back(i);
+    }
+
+    return;
+}
+
+void InitTasksStack(TasksStack* stack, db_api::Connector& conn) {
+    InitDiscipline(&((*stack)[db_api::Disciplines::PHY]),
+                   conn.RequestNumberTasks(db_api::Disciplines::PHY));
+    InitDiscipline(&((*stack)[db_api::Disciplines::MATH]),
+                   conn.RequestNumberTasks(db_api::Disciplines::MATH));
+    InitDiscipline(&((*stack)[db_api::Disciplines::RUS]),
+                   conn.RequestNumberTasks(db_api::Disciplines::RUS));
+    InitDiscipline(&((*stack)[db_api::Disciplines::BIO]),
+                   conn.RequestNumberTasks(db_api::Disciplines::BIO));
+    InitDiscipline(&((*stack)[db_api::Disciplines::COD]),
+                   conn.RequestNumberTasks(db_api::Disciplines::COD));
+    InitDiscipline(&((*stack)[db_api::Disciplines::GEN]),
+                   conn.RequestNumberTasks(db_api::Disciplines::GEN));
+    InitDiscipline(&((*stack)[db_api::Disciplines::HIST]),
+                   conn.RequestNumberTasks(db_api::Disciplines::HIST));
+    InitDiscipline(&((*stack)[db_api::Disciplines::CHEM]),
+                   conn.RequestNumberTasks(db_api::Disciplines::CHEM));
+    InitDiscipline(&((*stack)[db_api::Disciplines::SOC]),
+                   conn.RequestNumberTasks(db_api::Disciplines::SOC));
+
+    return;
 }
