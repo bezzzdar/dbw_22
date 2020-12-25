@@ -59,8 +59,25 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
 
-    sql_request << "SELECT " << discipline_name << "_answer FROM dialogue2020." << discipline_name
-                << " WHERE " << discipline_name << "_id=" << n_task;
+    sql_request << "SELECT is_case_sensitive FROM dialogue2020." << discipline_name << " WHERE "
+                << "id=" << n_task;
+    sql::ResultSet* res_case = stmt_->executeQuery(sql_request.str().c_str());
+
+    bool is_case_sensitive = false;
+    while (res_case->next()) {
+        is_case_sensitive = res_case->getInt(1);
+    }
+
+    sql_request.str("");
+    delete (res_case);
+
+    const std::string ans = bot_utils::ToLowerNoSpaces(user_answer);
+
+    std::cout << "user answer (is_case_sensitive: " << is_case_sensitive << "): <" << ans << ">\n";
+
+    sql_request << "SELECT "
+                << "answer FROM dialogue2020." << discipline_name << " WHERE "
+                << "id=" << n_task;
 
     sql::ResultSet* res_answer = stmt_->executeQuery(sql_request.str().c_str());
 
@@ -72,31 +89,37 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
 
     std::vector<std::string> answers = bot_utils::Parse(answer, '@');
 
+    std::cout << "parsed answers for " << discipline_name << n_task << ": ";
     for (const auto& token : answers) {
-        std::cout << discipline_name << n_task << '<' << token << ">\n";
+        std::cout << '<' << token << ">\n";
     }
 
     for (const auto& token : answers) {
-        if (token == user_answer) {
+        if (token == ans) {
+            std::cout << "correct\n";
+
             return true;
         }
     }
 
+    std::cout << "incorrect\n";
     return false;
 }
 
-std::string Connector::RequestTask(const Disciplines& discipline, const size_t n_task) {
+Task Connector::RequestTask(const Disciplines& discipline, const size_t n_task) {
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
 
-    sql_request << "SELECT " << discipline_name << "_task FROM dialogue2020." << discipline_name
-                << " WHERE " << discipline_name << "_id=" << n_task;
+    sql_request << "SELECT "
+                << "task, picture FROM dialogue2020." << discipline_name << " WHERE "
+                << "id=" << n_task;
 
     sql::ResultSet* res_task = stmt_->executeQuery(sql_request.str().c_str());
 
-    std::string task{};
+    Task task{};
     while (res_task->next()) {
-        task = res_task->getString(1);
+        task.text = res_task->getString(1);
+        task.pic_name = res_task->getString(2);
     }
     delete (res_task);
 
@@ -119,8 +142,8 @@ int Connector::RequestNumberTasks(const Disciplines& discipline) {
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
 
-    sql_request << "SELECT COUNT(" << discipline_name << "_id) FROM dialogue2020."
-                << discipline_name;
+    sql_request << "SELECT COUNT("
+                << "id) FROM dialogue2020." << discipline_name;
 
     sql::ResultSet* res_n_questions = stmt_->executeQuery(sql_request.str().c_str());
 

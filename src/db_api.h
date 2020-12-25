@@ -1,15 +1,23 @@
 #ifndef __DIALOGUE_DB_API_H_INCLUDED__
 #define __DIALOGUE_DB_API_H_INCLUDED__
 
-#include <cppconn/driver.h>
-#include <cppconn/prepared_statement.h>
+// #include <cppconn/driver.h>
+// #include <sstream>
+// #include <cppconn/prepared_statement.h>
+
 #include <iostream>
-#include <sstream>
+#include <mysql-cppconn-8/mysql/jdbc.h>
+#include <mysqlx/xdevapi.h>
 
 #include <map>
 #include <string>
 
 namespace db_api {
+struct Task {
+    std::string text;
+    std::string pic_name;
+};
+
 enum Disciplines {
     PHY,
     MATH,
@@ -72,8 +80,7 @@ class Connector {
     void RemoveUser(const int user_id);
     bool CheckAnswer(const std::string& user_answer, const Disciplines& discipline,
                      const size_t n_task);
-
-    std::string RequestTask(const Disciplines& discipline, const size_t n_task);
+    Task RequestTask(const Disciplines& discipline, const size_t n_task);
     void        RegisterCorrectAnswer(const int user_id, const Disciplines& discipline);
     int         RequestNumberTasks(const Disciplines& discipline);
 

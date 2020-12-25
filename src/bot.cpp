@@ -54,6 +54,14 @@ struct UserInfo {
 void InitTasksStack(TasksStack* stack, db_api::Connector& conn);
 
 int main(int argc, char* argv[]) {
+    std::string path_to_pics{argv[0]};
+
+    const auto iter_dir = path_to_pics.rfind('/');
+    path_to_pics = path_to_pics.substr(0, (iter_dir == std::string::npos) ? (0) : (iter_dir + 1));
+    path_to_pics += "../../db/";
+
+    std::cout << "path: <" << path_to_pics << ">\n";
+
     assert(argc == 4);
 
     // parameters of the DB
@@ -61,11 +69,14 @@ int main(int argc, char* argv[]) {
     const std::string username(argv[2]);
     const std::string password(argv[3]);
 
+    // const std::string username = "root";
+    // const std::string hostname = "tcp://LAPTOP-E950M0TH:3306";
+    // const std::string password = "****";
+
     db_api::Connector conn(hostname.c_str(), username.c_str(), password.c_str(), "dialogue2020");
 
     TgBot::Bot bot(BOT_TOKEN);
 
-    // global strucure for users
     std::map<int, UserInfo> chat_id_to_user_info{};
 
     // telegram keyboards
@@ -183,7 +194,7 @@ int main(int argc, char* argv[]) {
 
     // bot logic on user button input
     bot.getEvents().onCallbackQuery(
-        [&bot, &tasks_keyboard, &disciplines_keyboard, &chat_id_to_user_info, &conn](
+        [&bot, &tasks_keyboard, &disciplines_keyboard, &chat_id_to_user_info, &conn, &path_to_pics](
             TgBot::CallbackQuery::Ptr query) {
             // TODO: add code generation / define to avoid this copy-paste
             std::string query_data = query->data;
@@ -261,9 +272,23 @@ int main(int argc, char* argv[]) {
                         const auto task =
                             conn.RequestTask(discipline, user_info.tasks_stack[discipline].front());
 
-                        reply << task << '\n';
+                        reply << task.text << '\n';
+
+                        std::cout << "sending text: <" << task.text << ">\n";
 
                         bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+
+                        if (!task.pic_name.empty()) {
+                            std::string path_to_pic = path_to_pics + task.pic_name;
+
+                            std::cout << "sending photo: <" << path_to_pic << ">\n";
+
+                            bot.getApi().sendPhoto(
+                                chat_id, TgBot::InputFile::fromFile(path_to_pic, "image/jpeg"));
+                        }
+
+                        // FIXME:
+                        // reply << task << '\n';
                     } else {
                         chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
 
@@ -320,12 +345,26 @@ int main(int argc, char* argv[]) {
 
                     chat_id_to_user_info[chat_id].tasks_stack[discipline].push_back(
                         user_info.tasks_stack[discipline].front());
+
+                    const auto task =
+                        conn.RequestTask(discipline, user_info.tasks_stack[discipline].front());
+
                     chat_id_to_user_info[chat_id].tasks_stack[discipline].pop_front();
 
-                    reply << conn.RequestTask(
-                        discipline, chat_id_to_user_info[chat_id].tasks_stack[discipline].front());
+                    reply << task.text << '\n';
+
+                    std::cout << "sending text: <" << task.text << ">\n";
 
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+
+                    if (!task.pic_name.empty()) {
+                        std::string path_to_pic = path_to_pics + task.pic_name;
+
+                        std::cout << "sending photo: <" << path_to_pic << ">\n";
+
+                        bot.getApi().sendPhoto(
+                            chat_id, TgBot::InputFile::fromFile(path_to_pic, "image/jpeg"));
+                    }
                 } else if (StringTools::startsWith(query_data, "choose")) {
                     reply << "Хорошо, выбери другую тему:\n";
 
@@ -343,7 +382,8 @@ int main(int argc, char* argv[]) {
                                          &conn,
                                          &chat_id_to_user_info,
                                          &disciplines_keyboard,
-                                         &tasks_keyboard](const TgBot::Message::Ptr& message) {
+                                         &tasks_keyboard,
+                                         &path_to_pics](const TgBot::Message::Ptr& message) {
         const auto chat_id = message->chat->id;
         auto       message_text = message->text;
 
@@ -353,7 +393,7 @@ int main(int argc, char* argv[]) {
         std::cout << "user <" << user_info.name << "> in chat " << chat_id << " wrote:\n<"
                   << message_text << ">\n";
 
-        db_api::Disciplines current_discipline = db_api::Disciplines::NONE;
+        db_api::Disciplines discipline = db_api::Disciplines::NONE;
 
         std::stringstream reply;
 
@@ -438,60 +478,76 @@ int main(int argc, char* argv[]) {
             bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
             break;
         case PHY_CHOSEN:
-            current_discipline = db_api::Disciplines::PHY;
+            discipline = db_api::Disciplines::PHY;
             break;
         case BIO_CHOSEN:
-            current_discipline = db_api::Disciplines::BIO;
+            discipline = db_api::Disciplines::BIO;
             break;
         case RUS_CHOSEN:
-            current_discipline = db_api::Disciplines::RUS;
+            discipline = db_api::Disciplines::RUS;
             break;
         case COD_CHOSEN:
-            current_discipline = db_api::Disciplines::COD;
+            discipline = db_api::Disciplines::COD;
             break;
         case HIST_CHOSEN:
-            current_discipline = db_api::Disciplines::HIST;
+            discipline = db_api::Disciplines::HIST;
             break;
         case CHEM_CHOSEN:
-            current_discipline = db_api::Disciplines::CHEM;
+            discipline = db_api::Disciplines::CHEM;
             break;
         case GEN_CHOSEN:
-            current_discipline = db_api::Disciplines::GEN;
+            discipline = db_api::Disciplines::GEN;
             break;
         case SOC_CHOSEN:
-            current_discipline = db_api::Disciplines::SOC;
+            discipline = db_api::Disciplines::SOC;
             break;
         case MATH_CHOSEN:
-            current_discipline = db_api::Disciplines::MATH;
+            discipline = db_api::Disciplines::MATH;
             break;
         default:
-            current_discipline = db_api::Disciplines::PHY;
+            discipline = db_api::Disciplines::PHY;
             break;
         }
 
         // checking answer
-        if (current_discipline != db_api::Disciplines::NONE) {
+        if (discipline != db_api::Disciplines::NONE) {
             message_text = bot_utils::ToLowerNoSpaces(message_text);
 
-            bool ans_is_correct =
-                conn.CheckAnswer(message_text,
-                                 current_discipline,
-                                 user_info.tasks_stack[current_discipline].front());
+            bool ans_is_correct = conn.CheckAnswer(
+                message_text, discipline, user_info.tasks_stack[discipline].front());
 
             if (ans_is_correct) {
-                chat_id_to_user_info[chat_id].tasks_stack[current_discipline].pop_front();
+                chat_id_to_user_info[chat_id].tasks_stack[discipline].pop_front();
 
-                conn.RegisterCorrectAnswer(user_id, current_discipline);
+                conn.RegisterCorrectAnswer(user_id, discipline);
 
                 reply << "Ответ правильный, молодец!\n";
 
-                if (!chat_id_to_user_info[chat_id].tasks_stack[current_discipline].empty()) {
+                if (!chat_id_to_user_info[chat_id].tasks_stack[discipline].empty()) {
                     reply << "Вот следующее задание:\n";
-                    reply << conn.RequestTask(
-                        current_discipline,
-                        chat_id_to_user_info[chat_id].tasks_stack[current_discipline].front());
+
+                    const auto task = conn.RequestTask(
+                        discipline, chat_id_to_user_info[chat_id].tasks_stack[discipline].front());
+
+                    reply << task.text << '\n';
+
+                    std::cout << "sending text: <" << task.text << ">\n";
 
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+
+                    if (!task.pic_name.empty()) {
+                        std::string path_to_pic = path_to_pics + task.pic_name;
+
+                        std::cout << "sending photo: <" << path_to_pic << ">\n";
+
+                        bot.getApi().sendPhoto(
+                            chat_id, TgBot::InputFile::fromFile(path_to_pic, "image/jpeg"));
+                    }
+
+                    // FIXME:
+                    // reply << conn.RequestTask(
+                    //     discipline,
+                    //     chat_id_to_user_info[chat_id].tasks_stack[discipline].front());
                 } else {
                     reply << "Больше вопросов в этой категории нет. Но ты всегда можешь "
                              "попробовать другие!";
