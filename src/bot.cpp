@@ -84,7 +84,6 @@ int main(int argc, char* argv[]) {
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row1;
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row2;
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row3;
-    std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row4;
 
     TgBot::InlineKeyboardButton::Ptr phy(new TgBot::InlineKeyboardButton);
     phy->text = "физика";
@@ -125,13 +124,12 @@ int main(int argc, char* argv[]) {
     disciplines_row2.push_back(hist);
     disciplines_row2.push_back(chem);
     disciplines_row3.push_back(gen);
-    disciplines_row4.push_back(math);
+    disciplines_row3.push_back(math);
 
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row0);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row1);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row2);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row3);
-    disciplines_keyboard->inlineKeyboard.push_back(disciplines_row4);
 
     TgBot::InlineKeyboardMarkup::Ptr              tasks_keyboard(new TgBot::InlineKeyboardMarkup);
     std::vector<TgBot::InlineKeyboardButton::Ptr> tasks_row0;
@@ -336,8 +334,8 @@ int main(int argc, char* argv[]) {
 
                     chat_id_to_user_info[chat_id].tasks_stack[discipline].pop_front();
 
-                    const auto task =
-                        conn.RequestTask(discipline, user_info.tasks_stack[discipline].front());
+                    const auto task = conn.RequestTask(
+                        discipline, chat_id_to_user_info[chat_id].tasks_stack[discipline].front());
 
                     reply << task.text << '\n';
 
@@ -499,8 +497,6 @@ int main(int argc, char* argv[]) {
 
         // checking answer
         if (discipline != db_api::Disciplines::NONE) {
-            message_text = bot_utils::ToLowerNoSpaces(message_text);
-
             bool ans_is_correct = conn.CheckAnswer(
                 message_text, discipline, user_info.tasks_stack[discipline].front());
 
