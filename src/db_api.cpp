@@ -71,7 +71,8 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     sql_request.str("");
     delete (res_case);
 
-    const std::string ans = bot_utils::ToLowerNoSpaces(user_answer);
+    const std::string ans =
+        (is_case_sensitive) ? (user_answer) : (bot_utils::ToLowerNoSpaces(user_answer));
 
     std::cout << "user answer (is_case_sensitive: " << is_case_sensitive << "): <" << ans << ">\n";
 

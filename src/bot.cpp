@@ -28,7 +28,6 @@ enum BotState {
     HIST_CHOSEN,          // waiting for answer
     CHEM_CHOSEN,          // waiting for answer
     GEN_CHOSEN,           // waiting for answer
-    SOC_CHOSEN,           // waiting for answer
     MATH_CHOSEN,          // waiting for answer
 };
 
@@ -115,10 +114,6 @@ int main(int argc, char* argv[]) {
     gen->text = "общие";
     gen->callbackData = "gen";
 
-    TgBot::InlineKeyboardButton::Ptr soc(new TgBot::InlineKeyboardButton);
-    soc->text = "обществознание";
-    soc->callbackData = "soc";
-
     TgBot::InlineKeyboardButton::Ptr math(new TgBot::InlineKeyboardButton);
     math->text = "математика";
     math->callbackData = "math";
@@ -130,7 +125,6 @@ int main(int argc, char* argv[]) {
     disciplines_row2.push_back(hist);
     disciplines_row2.push_back(chem);
     disciplines_row3.push_back(gen);
-    disciplines_row3.push_back(soc);
     disciplines_row4.push_back(math);
 
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row0);
@@ -251,12 +245,6 @@ int main(int argc, char* argv[]) {
                     reply << "Раздел общие вопросы:\n";
 
                     discipline = db_api::Disciplines::GEN;
-                } else if (StringTools::startsWith(query_data, "soc")) {
-                    chat_id_to_user_info[chat_id].state = BotState::SOC_CHOSEN;
-
-                    reply << "Раздел обществознание:\n";
-
-                    discipline = db_api::Disciplines::SOC;
                 } else if (StringTools::startsWith(query_data, "math")) {
                     chat_id_to_user_info[chat_id].state = BotState::MATH_CHOSEN;
 
@@ -279,12 +267,15 @@ int main(int argc, char* argv[]) {
                         bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
 
                         if (!task.pic_name.empty()) {
-                            std::string path_to_pic = path_to_pics + task.pic_name;
+                            std::string path_to_pic = path_to_pics +
+                                                      db_api::discipline_to_string.at(discipline) +
+                                                      "/" + task.pic_name;
 
                             std::cout << "sending photo: <" << path_to_pic << ">\n";
 
                             bot.getApi().sendPhoto(
-                                chat_id, TgBot::InputFile::fromFile(path_to_pic, "image/jpeg"));
+                                chat_id,
+                                TgBot::InputFile::fromFile(path_to_pic, std::string("image/jpeg")));
                         }
 
                         // FIXME:
@@ -329,9 +320,6 @@ int main(int argc, char* argv[]) {
                 case BotState::CHEM_CHOSEN:
                     discipline = db_api::Disciplines::CHEM;
                     break;
-                case BotState::SOC_CHOSEN:
-                    discipline = db_api::Disciplines::SOC;
-                    break;
                 default:
                     return;
                 }
@@ -346,10 +334,10 @@ int main(int argc, char* argv[]) {
                     chat_id_to_user_info[chat_id].tasks_stack[discipline].push_back(
                         user_info.tasks_stack[discipline].front());
 
+                    chat_id_to_user_info[chat_id].tasks_stack[discipline].pop_front();
+
                     const auto task =
                         conn.RequestTask(discipline, user_info.tasks_stack[discipline].front());
-
-                    chat_id_to_user_info[chat_id].tasks_stack[discipline].pop_front();
 
                     reply << task.text << '\n';
 
@@ -358,12 +346,15 @@ int main(int argc, char* argv[]) {
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
 
                     if (!task.pic_name.empty()) {
-                        std::string path_to_pic = path_to_pics + task.pic_name;
+                        std::string path_to_pic = path_to_pics +
+                                                  db_api::discipline_to_string.at(discipline) +
+                                                  "/" + task.pic_name;
 
                         std::cout << "sending photo: <" << path_to_pic << ">\n";
 
                         bot.getApi().sendPhoto(
-                            chat_id, TgBot::InputFile::fromFile(path_to_pic, "image/jpeg"));
+                            chat_id,
+                            TgBot::InputFile::fromFile(path_to_pic, std::string("image/jpeg")));
                     }
                 } else if (StringTools::startsWith(query_data, "choose")) {
                     reply << "Хорошо, выбери другую тему:\n";
@@ -498,9 +489,6 @@ int main(int argc, char* argv[]) {
         case GEN_CHOSEN:
             discipline = db_api::Disciplines::GEN;
             break;
-        case SOC_CHOSEN:
-            discipline = db_api::Disciplines::SOC;
-            break;
         case MATH_CHOSEN:
             discipline = db_api::Disciplines::MATH;
             break;
@@ -536,12 +524,15 @@ int main(int argc, char* argv[]) {
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
 
                     if (!task.pic_name.empty()) {
-                        std::string path_to_pic = path_to_pics + task.pic_name;
+                        std::string path_to_pic = path_to_pics +
+                                                  db_api::discipline_to_string.at(discipline) +
+                                                  "/" + task.pic_name;
 
                         std::cout << "sending photo: <" << path_to_pic << ">\n";
 
                         bot.getApi().sendPhoto(
-                            chat_id, TgBot::InputFile::fromFile(path_to_pic, "image/jpeg"));
+                            chat_id,
+                            TgBot::InputFile::fromFile(path_to_pic, std::string("image/jpeg")));
                     }
 
                     // FIXME:
@@ -607,8 +598,6 @@ void InitTasksStack(TasksStack* stack, db_api::Connector& conn) {
                    conn.RequestNumberTasks(db_api::Disciplines::HIST));
     InitDiscipline(&((*stack)[db_api::Disciplines::CHEM]),
                    conn.RequestNumberTasks(db_api::Disciplines::CHEM));
-    InitDiscipline(&((*stack)[db_api::Disciplines::SOC]),
-                   conn.RequestNumberTasks(db_api::Disciplines::SOC));
 
     return;
 }

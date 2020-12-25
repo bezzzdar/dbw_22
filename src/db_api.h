@@ -27,7 +27,6 @@ enum Disciplines {
     GEN,
     HIST,
     CHEM,
-    SOC,
     NONE,
 };
 
@@ -40,7 +39,6 @@ const std::map<Disciplines, const char*> discipline_to_string{
     {GEN, "gen"},
     {HIST, "hist"},
     {CHEM, "chem"},
-    {SOC, "soc"},
     {NONE, "none"},
 };
 
@@ -81,8 +79,8 @@ class Connector {
     bool CheckAnswer(const std::string& user_answer, const Disciplines& discipline,
                      const size_t n_task);
     Task RequestTask(const Disciplines& discipline, const size_t n_task);
-    void        RegisterCorrectAnswer(const int user_id, const Disciplines& discipline);
-    int         RequestNumberTasks(const Disciplines& discipline);
+    void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline);
+    int  RequestNumberTasks(const Disciplines& discipline);
 
     int RequestUserScore(const int user_id);
 
