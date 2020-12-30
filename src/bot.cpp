@@ -112,8 +112,8 @@ int main(int argc, char* argv[]) {
     chem->callbackData = "chem";
 
     TgBot::InlineKeyboardButton::Ptr eng(new TgBot::InlineKeyboardButton);
-    eng->text = "химия";
-    eng->callbackData = "chem";
+    eng->text = "английский";
+    eng->callbackData = "eng";
 
     TgBot::InlineKeyboardButton::Ptr cult(new TgBot::InlineKeyboardButton);
     cult->text = "культура";
@@ -248,7 +248,7 @@ int main(int argc, char* argv[]) {
                 } else if (StringTools::startsWith(query_data, "cult")) {
                     chat_id_to_user_info[chat_id].state = BotState::CULT_CHOSEN;
 
-                    reply << "Раздел общие вопросы:\n";
+                    reply << "Раздел культуры:\n";
 
                     discipline = db_api::Disciplines::CULT;
                 } else if (StringTools::startsWith(query_data, "math")) {
@@ -257,6 +257,12 @@ int main(int argc, char* argv[]) {
                     reply << "Раздел математика:\n";
 
                     discipline = db_api::Disciplines::MATH;
+                } else if (StringTools::startsWith(query_data, "eng")) {
+                    chat_id_to_user_info[chat_id].state = BotState::ENG_CHOSEN;
+
+                    reply << "Раздел английский:\n";
+
+                    discipline = db_api::Disciplines::ENG;
                 }
 
                 if (discipline != db_api::Disciplines::NONE) {
@@ -612,6 +618,8 @@ void InitTasksStack(TasksStack* stack, db_api::Connector& conn) {
                    conn.RequestNumberTasks(db_api::Disciplines::HIST));
     InitDiscipline(&((*stack)[db_api::Disciplines::CHEM]),
                    conn.RequestNumberTasks(db_api::Disciplines::CHEM));
+    InitDiscipline(&((*stack)[db_api::Disciplines::ENG]),
+                   conn.RequestNumberTasks(db_api::Disciplines::ENG));
 
     return;
 }
