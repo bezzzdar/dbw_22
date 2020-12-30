@@ -1,13 +1,13 @@
 #ifndef __DIALOGUE_DB_API_H_INCLUDED__
 #define __DIALOGUE_DB_API_H_INCLUDED__
 
-// #include <cppconn/driver.h>
-// #include <sstream>
-// #include <cppconn/prepared_statement.h>
+#include <cppconn/driver.h>
+#include <cppconn/prepared_statement.h>
+#include <sstream>
 
 #include <iostream>
-#include <mysql-cppconn-8/mysql/jdbc.h>
-#include <mysqlx/xdevapi.h>
+// #include <mysql-cppconn-8/mysql/jdbc.h>
+// #include <mysqlx/xdevapi.h>
 
 #include <map>
 #include <string>
