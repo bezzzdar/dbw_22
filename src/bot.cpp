@@ -27,7 +27,8 @@ enum BotState {
     COD_CHOSEN,           // waiting for answer
     HIST_CHOSEN,          // waiting for answer
     CHEM_CHOSEN,          // waiting for answer
-    GEN_CHOSEN,           // waiting for answer
+    ENG_CHOSEN,           // waiting for answer
+    CULT_CHOSEN,          // waiting for answer
     MATH_CHOSEN,          // waiting for answer
 };
 
@@ -84,6 +85,7 @@ int main(int argc, char* argv[]) {
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row1;
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row2;
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row3;
+    std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row4;
 
     TgBot::InlineKeyboardButton::Ptr phy(new TgBot::InlineKeyboardButton);
     phy->text = "физика";
@@ -109,9 +111,13 @@ int main(int argc, char* argv[]) {
     chem->text = "химия";
     chem->callbackData = "chem";
 
-    TgBot::InlineKeyboardButton::Ptr gen(new TgBot::InlineKeyboardButton);
-    gen->text = "общие";
-    gen->callbackData = "gen";
+    TgBot::InlineKeyboardButton::Ptr eng(new TgBot::InlineKeyboardButton);
+    eng->text = "химия";
+    eng->callbackData = "chem";
+
+    TgBot::InlineKeyboardButton::Ptr cult(new TgBot::InlineKeyboardButton);
+    cult->text = "культура";
+    cult->callbackData = "cult";
 
     TgBot::InlineKeyboardButton::Ptr math(new TgBot::InlineKeyboardButton);
     math->text = "математика";
@@ -123,13 +129,15 @@ int main(int argc, char* argv[]) {
     disciplines_row1.push_back(cod);
     disciplines_row2.push_back(hist);
     disciplines_row2.push_back(chem);
-    disciplines_row3.push_back(gen);
+    disciplines_row3.push_back(cult);
     disciplines_row3.push_back(math);
+    disciplines_row4.push_back(eng);
 
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row0);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row1);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row2);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row3);
+    disciplines_keyboard->inlineKeyboard.push_back(disciplines_row4);
 
     TgBot::InlineKeyboardMarkup::Ptr              tasks_keyboard(new TgBot::InlineKeyboardMarkup);
     std::vector<TgBot::InlineKeyboardButton::Ptr> tasks_row0;
@@ -237,12 +245,12 @@ int main(int argc, char* argv[]) {
                     reply << "Раздел химия:\n";
 
                     discipline = db_api::Disciplines::CHEM;
-                } else if (StringTools::startsWith(query_data, "gen")) {
-                    chat_id_to_user_info[chat_id].state = BotState::GEN_CHOSEN;
+                } else if (StringTools::startsWith(query_data, "cult")) {
+                    chat_id_to_user_info[chat_id].state = BotState::CULT_CHOSEN;
 
                     reply << "Раздел общие вопросы:\n";
 
-                    discipline = db_api::Disciplines::GEN;
+                    discipline = db_api::Disciplines::CULT;
                 } else if (StringTools::startsWith(query_data, "math")) {
                     chat_id_to_user_info[chat_id].state = BotState::MATH_CHOSEN;
 
@@ -271,13 +279,14 @@ int main(int argc, char* argv[]) {
 
                             std::cout << "sending photo: <" << path_to_pic << ">\n";
 
-                            bot.getApi().sendPhoto(
-                                chat_id,
-                                TgBot::InputFile::fromFile(path_to_pic, std::string("image/jpeg")));
-                        }
+                            std::string mime_type = "image/";
 
-                        // FIXME:
-                        // reply << task << '\n';
+                            const auto iter_dir = path_to_pics.rfind('.');
+                            mime_type += path_to_pics.substr(iter_dir + 1);
+
+                            bot.getApi().sendPhoto(
+                                chat_id, TgBot::InputFile::fromFile(path_to_pic, mime_type));
+                        }
                     } else {
                         chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
 
@@ -309,8 +318,8 @@ int main(int argc, char* argv[]) {
                 case BotState::COD_CHOSEN:
                     discipline = db_api::Disciplines::COD;
                     break;
-                case BotState::GEN_CHOSEN:
-                    discipline = db_api::Disciplines::GEN;
+                case BotState::CULT_CHOSEN:
+                    discipline = db_api::Disciplines::CULT;
                     break;
                 case BotState::HIST_CHOSEN:
                     discipline = db_api::Disciplines::HIST;
@@ -350,9 +359,13 @@ int main(int argc, char* argv[]) {
 
                         std::cout << "sending photo: <" << path_to_pic << ">\n";
 
-                        bot.getApi().sendPhoto(
-                            chat_id,
-                            TgBot::InputFile::fromFile(path_to_pic, std::string("image/jpeg")));
+                        std::string mime_type = "image/";
+
+                        const auto iter_dir = path_to_pics.rfind('.');
+                        mime_type += path_to_pics.substr(iter_dir + 1);
+
+                        bot.getApi().sendPhoto(chat_id,
+                                               TgBot::InputFile::fromFile(path_to_pic, mime_type));
                     }
                 } else if (StringTools::startsWith(query_data, "choose")) {
                     reply << "Хорошо, выбери другую тему:\n";
@@ -484,8 +497,8 @@ int main(int argc, char* argv[]) {
         case CHEM_CHOSEN:
             discipline = db_api::Disciplines::CHEM;
             break;
-        case GEN_CHOSEN:
-            discipline = db_api::Disciplines::GEN;
+        case CULT_CHOSEN:
+            discipline = db_api::Disciplines::CULT;
             break;
         case MATH_CHOSEN:
             discipline = db_api::Disciplines::MATH;
@@ -526,15 +539,14 @@ int main(int argc, char* argv[]) {
 
                         std::cout << "sending photo: <" << path_to_pic << ">\n";
 
-                        bot.getApi().sendPhoto(
-                            chat_id,
-                            TgBot::InputFile::fromFile(path_to_pic, std::string("image/jpeg")));
-                    }
+                        std::string mime_type = "image/";
 
-                    // FIXME:
-                    // reply << conn.RequestTask(
-                    //     discipline,
-                    //     chat_id_to_user_info[chat_id].tasks_stack[discipline].front());
+                        const auto iter_dir = path_to_pics.rfind('.');
+                        mime_type += path_to_pics.substr(iter_dir + 1);
+
+                        bot.getApi().sendPhoto(chat_id,
+                                               TgBot::InputFile::fromFile(path_to_pic, mime_type));
+                    }
                 } else {
                     reply << "Больше вопросов в этой категории нет. Но ты всегда можешь "
                              "попробовать другие!";
@@ -588,8 +600,8 @@ void InitTasksStack(TasksStack* stack, db_api::Connector& conn) {
                    conn.RequestNumberTasks(db_api::Disciplines::BIO));
     InitDiscipline(&((*stack)[db_api::Disciplines::COD]),
                    conn.RequestNumberTasks(db_api::Disciplines::COD));
-    InitDiscipline(&((*stack)[db_api::Disciplines::GEN]),
-                   conn.RequestNumberTasks(db_api::Disciplines::GEN));
+    InitDiscipline(&((*stack)[db_api::Disciplines::CULT]),
+                   conn.RequestNumberTasks(db_api::Disciplines::CULT));
     InitDiscipline(&((*stack)[db_api::Disciplines::HIST]),
                    conn.RequestNumberTasks(db_api::Disciplines::HIST));
     InitDiscipline(&((*stack)[db_api::Disciplines::CHEM]),

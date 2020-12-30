@@ -24,9 +24,10 @@ enum Disciplines {
     RUS,
     BIO,
     COD,
-    GEN,
+    CULT,
     HIST,
     CHEM,
+    ENG
     NONE,
 };
 
@@ -36,9 +37,10 @@ const std::map<Disciplines, const char*> discipline_to_string{
     {RUS, "rus"},
     {BIO, "bio"},
     {COD, "cod"},
-    {GEN, "gen"},
+    {CULT, "cult"},
     {HIST, "hist"},
     {CHEM, "chem"},
+    {ENG, "eng"},
     {NONE, "none"},
 };
 
