@@ -321,6 +321,9 @@ int main(int argc, char* argv[]) {
                 case BotState::CULT_CHOSEN:
                     discipline = db_api::Disciplines::CULT;
                     break;
+                case BotState::ENG_CHOSEN:
+                    discipline = db_api::Disciplines::ENG;
+                    break;
                 case BotState::HIST_CHOSEN:
                     discipline = db_api::Disciplines::HIST;
                     break;
@@ -499,6 +502,9 @@ int main(int argc, char* argv[]) {
             break;
         case CULT_CHOSEN:
             discipline = db_api::Disciplines::CULT;
+            break;
+        case ENG_CHOSEN:
+            discipline = db_api::Disciplines::ENG;
             break;
         case MATH_CHOSEN:
             discipline = db_api::Disciplines::MATH;
