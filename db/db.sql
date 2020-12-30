@@ -12,7 +12,7 @@ CREATE TABLE users (
     number_cod INTEGER default 1,
     number_hist INTEGER default 1,
     number_chem INTEGER default 1,
-    number_gen INTEGER default 1,
+    number_cult INTEGER default 1,
     number_soc INTEGER default 1,
     number_math INTEGER default 1,
     primary key(user_id)
