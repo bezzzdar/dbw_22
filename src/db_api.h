@@ -27,7 +27,7 @@ enum Disciplines {
     CULT,
     HIST,
     CHEM,
-    ENG
+    ENG,
     NONE,
 };
 
