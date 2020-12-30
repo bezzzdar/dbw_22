@@ -15,6 +15,7 @@ CREATE TABLE users (
     number_cult INTEGER default 1,
     number_soc INTEGER default 1,
     number_math INTEGER default 1,
+    number_eng INTEGER default 1,
     primary key(user_id)
 );
 
@@ -571,6 +572,16 @@ values
 , 'Алёнушка');
 
 USE dialogue2020;
+CREATE TABLE eng (
+	id INTEGER auto_increment,
+    is_case_sensitive bool default 0,
+    task text,
+    picture text,
+    answer text NULL,
+    primary key(id)
+);
+
+USE dialogue2020;
 select * from users;
 select * from phy;
 select * from bio;
@@ -580,3 +591,4 @@ select * from rus;
 select * from math;
 select * from chem;
 select * from cod;
+select * from eng;
