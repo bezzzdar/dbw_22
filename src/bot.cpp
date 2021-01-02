@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
     rus->callbackData = "rus";
 
     TgBot::InlineKeyboardButton::Ptr cod(new TgBot::InlineKeyboardButton);
-    cod->text = "кодинг";
+    cod->text = "программирование";
     cod->callbackData = "cod";
 
     TgBot::InlineKeyboardButton::Ptr hist(new TgBot::InlineKeyboardButton);
@@ -293,7 +293,7 @@ int main(int argc, char* argv[]) {
             } else if (StringTools::startsWith(query_data, "cod")) {
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::COD_CHOSEN;
 
-                reply << "Раздел кодинг:\n";
+                reply << "Раздел программирование:\n";
 
                 discipline = db_api::Disciplines::COD;
             } else if (StringTools::startsWith(query_data, "hist")) {
