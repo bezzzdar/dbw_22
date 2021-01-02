@@ -73,7 +73,7 @@ std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
 // MAIN
 int main(int argc, char* argv[]) {
     // back-up data storage
-    // on exception (technically impossible, but let it be, just in case)
+    // on unhandled exception
     std::set_terminate([]() {
         std::cout << "Unhandled exception or abort occured!\n" << std::endl;
 
@@ -640,18 +640,11 @@ int main(int argc, char* argv[]) {
 
     TgBot::TgLongPoll longPoll(bot);
 
-    // int i = 0;
     try {
         while (true) {
             std::cout << "Long poll started\n";
 
             longPoll.start();
-
-            //     if (i == 10) {
-            //         throw 1;
-            //     } else {
-            //         i++;
-            //     }
         }
     } catch (const std::runtime_error& re) {
         std::cerr << "Runtime error: " << re.what() << std::endl;
@@ -662,17 +655,6 @@ int main(int argc, char* argv[]) {
 
         SerializeUserInfo();
     }
-
-    // try {
-    //     printf("Bot username: %s\n", bot.getApi().getMe()->username.c_str());
-    //     TgBot::TgLongPoll longPoll(bot);
-    //     while (true) {
-    //         printf("Long poll started\n");
-    //         longPoll.start();
-    //     }
-    // } catch (TgBot::TgException& e) {
-    //     printf("error: %s\n", e.what());
-    // }
 
     return 0;
 }
