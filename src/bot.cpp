@@ -469,6 +469,7 @@ int main(int argc, char* argv[]) {
                 chat_id_to_user_info[chat_id].school = school_n;
                 chat_id_to_user_info[chat_id].user_id = conn.AddUser(user_info.name, school_n);
                 chat_id_to_user_info[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
+
                 InitTasksStack(&chat_id_to_user_info[chat_id].tasks_stack, conn);
 
                 reply << "Теперь выбери, какие вопросы ты хочешь решать. Категорию можно "
@@ -526,9 +527,10 @@ int main(int argc, char* argv[]) {
                 message_text, discipline, user_info.tasks_stack[discipline].front());
 
             if (ans_is_correct) {
+                const auto task_id = chat_id_to_user_info[chat_id].tasks_stack[discipline].front();
                 chat_id_to_user_info[chat_id].tasks_stack[discipline].pop_front();
 
-                conn.RegisterCorrectAnswer(user_id, discipline);
+                conn.RegisterCorrectAnswer(user_id, discipline, task_id);
 
                 reply << "Ответ правильный, молодец!\n";
 

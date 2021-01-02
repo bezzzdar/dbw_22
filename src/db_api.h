@@ -1,13 +1,14 @@
 #ifndef __DIALOGUE_DB_API_H_INCLUDED__
 #define __DIALOGUE_DB_API_H_INCLUDED__
 
-#include <cppconn/driver.h>
-#include <cppconn/prepared_statement.h>
-#include <sstream>
+// #include <cppconn/driver.h>
+// #include <cppconn/prepared_statement.h>
 
+#include <sstream>
 #include <iostream>
-// #include <mysql-cppconn-8/mysql/jdbc.h>
-// #include <mysqlx/xdevapi.h>
+
+#include <mysql-cppconn-8/mysql/jdbc.h>
+#include <mysqlx/xdevapi.h>
 
 #include <map>
 #include <string>
@@ -81,7 +82,7 @@ class Connector {
     bool CheckAnswer(const std::string& user_answer, const Disciplines& discipline,
                      const size_t n_task);
     Task RequestTask(const Disciplines& discipline, const size_t n_task);
-    void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline);
+    void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline, const size_t task_id);
     int  RequestNumberTasks(const Disciplines& discipline);
 
     int RequestUserScore(const int user_id);

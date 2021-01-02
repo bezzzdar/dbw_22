@@ -40,6 +40,19 @@ std::string ToLowerNoSpaces(const std::string& str) {
     return converter.to_bytes(ws);
 }
 
+std::string NoSpaces(const std::string& str) {
+    setlocale(LC_CTYPE, "ru_RU.UTF-8");
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> converter;
+    std::wstring                                                    ws = converter.from_bytes(str);
+
+    ws.erase(std::remove(ws.begin(), ws.end(), L' '), ws.end());
+    ws.erase(std::remove(ws.begin(), ws.end(), L'\t'), ws.end());
+    ws.erase(std::remove(ws.begin(), ws.end(), L'\n'), ws.end());
+    ws.erase(std::remove(ws.begin(), ws.end(), L'\r'), ws.end());
+
+    return converter.to_bytes(ws);
+}
+
 bool IsValidName(const std::string& name) {
     const auto string = ToLowerNoSpaces(name);
 

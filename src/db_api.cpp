@@ -71,8 +71,8 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     sql_request.str("");
     delete (res_case);
 
-    const std::string ans =
-        (is_case_sensitive) ? (user_answer) : (bot_utils::ToLowerNoSpaces(user_answer));
+    const std::string ans = (is_case_sensitive) ? (bot_utils::NoSpaces(user_answer))
+                                                : (bot_utils::ToLowerNoSpaces(user_answer));
 
     std::cout << "user answer (is_case_sensitive: " << is_case_sensitive << "): <" << ans << ">\n";
 
@@ -127,12 +127,18 @@ Task Connector::RequestTask(const Disciplines& discipline, const size_t n_task) 
     return task;
 }
 
-void Connector::RegisterCorrectAnswer(const int user_id, const Disciplines& discipline) {
+void Connector::RegisterCorrectAnswer(const int user_id, const Disciplines& discipline,
+                                      const size_t task_id) {
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
 
     sql_request << "UPDATE dialogue2020.users SET score"
                 << "=score+1 WHERE user_id=" << user_id;
+    stmt_->execute(sql_request.str().c_str());
+    sql_request.str("");
+
+    sql_request << "UPDATE dialogue2020." << discipline_name << " SET solved"
+                << "=solved+1 WHERE task_id=" << task_id;
     stmt_->execute(sql_request.str().c_str());
     sql_request.str("");
 
