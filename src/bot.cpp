@@ -348,8 +348,8 @@ int main(int argc, char* argv[]) {
 
                         std::string mime_type = "image/";
 
-                        const auto iter_dir = task.pic_name.rfind('.');
-                        mime_type += task.pic_name.substr(iter_dir + 1);
+                        const auto iter_dir = path_to_pic.rfind('.');
+                        mime_type += path_to_pic.substr(iter_dir + 1);
 
                         std::cout << "sending photo 1: <" << path_to_pic << "> <" << mime_type
                                   << ">\n";
@@ -444,8 +444,8 @@ int main(int argc, char* argv[]) {
 
                     std::string mime_type = "image/";
 
-                    const auto iter_dir = task.pic_name.rfind('.');
-                    mime_type += task.pic_name.substr(iter_dir + 1);
+                    const auto iter_dir = path_to_pic.rfind('.');
+                    mime_type += path_to_pic.substr(iter_dir + 1);
 
                     std::cout << "sending photo 2: <" << path_to_pic << "> <" << mime_type << ">\n";
 
@@ -639,8 +639,8 @@ int main(int argc, char* argv[]) {
 
                         std::string mime_type = "image/";
 
-                        const auto iter_dir = task.pic_name.rfind('.');
-                        mime_type += task.pic_name.substr(iter_dir + 1);
+                        const auto iter_dir = path_to_pic.rfind('.');
+                        mime_type += path_to_pic.substr(iter_dir + 1);
 
                         std::cout << "sending photo 3: <" << path_to_pic << "> <" << mime_type
                                   << ">\n";
