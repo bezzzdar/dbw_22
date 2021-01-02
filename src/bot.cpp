@@ -53,6 +53,7 @@ struct UserInfo {
     BotState state = NO_STATE;
 
     int user_id = -1;
+    int user_score = 0;
 
     TasksStack tasks_stack;
 };
@@ -62,6 +63,7 @@ struct UserInfo {
 void InitTasksStack(TasksStack* stack, db_api::Connector& conn);
 void ReadUserInfo(const std::string& path_to_save);
 void SerializeUserInfo();
+void CalculateResults();
 void SigHandler(int s);
 
 // ====================
@@ -87,6 +89,8 @@ int main(int argc, char* argv[]) {
         std::cout << "Bot terminated!\n" << std::endl;
 
         SerializeUserInfo();
+
+        CalculateResults();
     });
 
     // on signal
@@ -642,6 +646,7 @@ int main(int argc, char* argv[]) {
                 conn.RegisterCorrectAnswer(user_id, discipline, task_id);
 
                 CHAT_ID_TO_USER_INFO[chat_id].tasks_stack[discipline].pop_front();
+                CHAT_ID_TO_USER_INFO[chat_id].user_score++;
 
                 reply << "Ответ правильный, молодец!\n";
 
@@ -790,8 +795,9 @@ void ReadUserInfo(const std::string& path_to_save) {
         u_info.school = std::stoi(tokens[2]);
         u_info.state = static_cast<BotState>(std::stoi(tokens[3]));
         u_info.user_id = std::stoi(tokens[4]);
+        u_info.user_score = std::stoi(tokens[5]);
 
-        for (size_t i = 5; i < tokens.size(); i++) {
+        for (size_t i = 6; i < tokens.size(); i++) {
             const auto task_stack(bot_utils::Parse(tokens[i], ','));
 
             const auto discipline = static_cast<db_api::Disciplines>(std::stoi(task_stack[0]));
@@ -821,7 +827,8 @@ void SerializeUserInfo() {
     for (const auto& pair_info : CHAT_ID_TO_USER_INFO) {
         f << pair_info.first << ';';
         f << pair_info.second.name << ';' << pair_info.second.school << ';'
-          << pair_info.second.state << ';' << pair_info.second.user_id;
+          << pair_info.second.state << ';' << pair_info.second.user_id << ';'
+          << pair_info.second.user_score;
 
         for (const auto& pair_stack : pair_info.second.tasks_stack) {
             f << ';' << pair_stack.first;
@@ -837,6 +844,41 @@ void SerializeUserInfo() {
     f.close();
 
     std::cout << "> done!\n";
+
+    return;
+}
+
+void CalculateResults() {
+    std::map<int, int>                       points_per_school{};
+    std::pair<std::vector<std::string>, int> winner{};
+
+    std::ofstream f;
+    f.open("results.log", std::ofstream::out | std::ofstream::trunc);
+
+    for (const auto& pair : CHAT_ID_TO_USER_INFO) {
+        if (pair.second.user_score > winner.second) {
+            winner.first.clear();
+
+            winner.first.push_back(pair.second.name);
+            winner.second = pair.second.user_score;
+        } else if (pair.second.user_score == winner.second) {
+            winner.first.push_back(pair.second.name);
+        }
+
+        points_per_school[pair.second.school] += pair.second.user_score;
+    }
+
+    f << "winner user(s):\n";
+    for (const auto& name : winner.first) {
+        f << '\t' << '<' << name << '>' << '\n';
+    }
+
+    f << "\nschools:\n";
+    for (const auto school : points_per_school) {
+        f << std::setw(6) << std::setfill(' ') << school.first << ":" << school.second << '\n';
+    }
+
+    f.close();
 
     return;
 }
