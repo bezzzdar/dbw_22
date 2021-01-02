@@ -369,6 +369,18 @@ int main(int argc, char* argv[]) {
                                      "вернуться к этому. Прости(\n";
 
                             bot.getApi().sendMessage(chat_id, reply.str());
+                        } catch (const std::runtime_error& re) {
+                            std::cout << "runtime error sending photo:\n";
+                            std::cout << re.what() << std::endl;
+
+                            reply.str("");
+
+                            reply << "Если ты видишь это сообщение, костя так и не разобрался с "
+                                     "кодировками и фото не отправилось. Порешай пока другие "
+                                     "задания и через какое то время попытайся вернуться к этому. "
+                                     "Прости(\n";
+
+                            bot.getApi().sendMessage(chat_id, reply.str());
                         }
                     }
                 } else {
@@ -463,6 +475,17 @@ int main(int argc, char* argv[]) {
                         reply << "Извини, произошла ошибка при отправке фото к этому заданию. "
                                  "Порешай пока другие и через какое то время попытайся "
                                  "вернуться к этому. Прости(\n";
+
+                        bot.getApi().sendMessage(chat_id, reply.str());
+                    } catch (const std::runtime_error& re) {
+                        std::cout << "runtime error sending photo:\n";
+                        std::cout << re.what() << std::endl;
+
+                        reply.str("");
+
+                        reply << "Если ты видишь это сообщение, костя так и не разобрался с "
+                                 "кодировками и фото не отправилось. Порешай пока другие задания и "
+                                 "через какое то время попытайся вернуться к этому. Прости(\n";
 
                         bot.getApi().sendMessage(chat_id, reply.str());
                     }
@@ -660,6 +683,18 @@ int main(int argc, char* argv[]) {
                             reply << "Извини, произошла ошибка при отправке фото к этому заданию. "
                                      "Порешай пока другие и через какое то время попытайся "
                                      "вернуться к этому. Прости(\n";
+
+                            bot.getApi().sendMessage(chat_id, reply.str());
+                        } catch (const std::runtime_error& re) {
+                            std::cout << "runtime error sending photo:\n";
+                            std::cout << re.what() << std::endl;
+
+                            reply.str("");
+
+                            reply << "Если ты видишь это сообщение, костя так и не разобрался с "
+                                     "кодировками и фото не отправилось. Порешай пока другие "
+                                     "задания и "
+                                     "через какое то время попытайся вернуться к этому. Прости(\n";
 
                             bot.getApi().sendMessage(chat_id, reply.str());
                         }
