@@ -813,6 +813,8 @@ void ReadUserInfo(const std::string& path_to_save) {
 }
 
 void SerializeUserInfo() {
+    std::cout << "> serializing...\n";
+
     std::ofstream f;
     f.open("chat_id_to_u_info.log", std::ofstream::out | std::ofstream::trunc);
 
@@ -833,6 +835,8 @@ void SerializeUserInfo() {
     }
 
     f.close();
+
+    std::cout << "> done!\n";
 
     return;
 }
