@@ -59,9 +59,9 @@ values
 ,'0.73'),
 ('','Вдоль оси Х движутся две точки: первая по закону х1 = 8 + 5sin(2pi*t), вторая по закону х2 = 5 + 2sin(2pi*t). В ответе укажите момент времени в который они встретятся? Дробное число укажите в формате a/b'
 , '4'),
-('02.jpeg','Определить значение скорости материальной точки в момент времени t2 в м/c. Отрезки t1, t1-t2, t2-t3 равны, а значения x0 и x1 равны по модулю. В десятичной дроби используйте точку.'
+('02.jpeg','Дан график описывающий движение тела вдоль оси Х. Определить значение скорости материальной точки в момент времени t2 в м/c. Отрезки t1, t1-t2, t2-t3 равны, а значения x0 и x1 равны по модулю. В десятичной дроби используйте точку.'
 ,'0'),
-('','В воздушном шаре весь заполняющий его водород заменили гелием, молярные массы водорода, гелия и воздуха соответственно: 1 г/моль, 4 г/моль, 29 г/моль. Укажите отношение подъемной силы водорода к подъёмной силе гелия, округлив десятичную дробь до второго знака после запятой. В десятичной дроби используйте точку.'
+('','В воздушном шаре(оболочку которого можно считать невесомой) весь заполняющий его водород заменили гелием, молярные массы водорода, гелия и воздуха соответственно: 1 г/моль, 4 г/моль, 29 г/моль. Укажите отношение подъемной силы водорода к подъёмной силе гелия, округлив десятичную дробь до второго знака после запятой. В десятичной дроби используйте точку.'
 , '1.08'),
 ('09.jpeg','Пуля массы m = 0.01 кг летящая со скоростью V = 600 м/c врезается в ящик с песком. В результате попадания пружина с коэффициентом жёсткости k = 200 Н/м, находящаяся за ящиком, сжалась на 13.5 см. Найдите массу ящика в кг округлив значение до сотых. Трением в системе принебречь.'
 ,'9.87'),
@@ -187,13 +187,13 @@ values
 Ответ запишите в формате ABC. 
 Подсказка: Используя принцип комплиментарности, сначала перейдите от последовательности ДНК в иРНК.'
 , 'ant'),
-('02.jpeg', 'Как называется часть тела,  на которую указывает стрелка?','туловище'),
+('02.jpeg', 'Как называется часть тела,  на которую указывает стрелка?','туловище@мантия'),
 ('27.jpeg', 'Перед вами последовательность ДНК: ЦТАЦТЦЦТТТЦЦ
 Напишите, какую последовательность аминокислот она будет кодировать.Для поиска аминокислот используйте данную таблицу генетического кода иРНК, причем каждую аминокислоту обозначьте одной латинской буквой( в таблице они красные).Случайно или нет - (конечно же, нет!) - последовательность аминокислот должна сложиться в название  животного.  
 Ответ запишите в формате “ABC”
 Подсказка: Используя принцип комплиментарности,сначала  перейдите от последовательности ДНК в иРНК.'
 , 'deer'),
-('03.jpeg','Какой отдел вегетативной нервной системы иннервируется нервами , обозначенными на рисунке красным цветом?','cимпатический'),
+('03.jpeg','Какой отдел вегетативной нервной системы иннервируется нервами , обозначенными на рисунке красным цветом?','симпатический'),
 ('27.jpeg','Перед вами последовательность ДНК: ААГТАГАГТГТА
 Напишите, какую последовательность аминокислот она будет кодировать.Для поиска аминокислот используйте данную таблицу генетического кода иРНК, причем каждую аминокислоту обозначьте одной латинской буквой( в таблице они красные).Случайно или нет - (конечно же, нет!) - последовательность аминокислот должна сложиться в название животного.  
 Ответ запишите в формате “ABC”.
@@ -212,7 +212,7 @@ values
 Используя принцип комплиментарности,сначала  перейдите от последовательности ДНК в иРНК.'
  , 'pig'),
 ('06.jpeg','Как называется часть листа, изображённая на рисунке?','устьице'),
-('07.jpeg','Какой орган выделен красным на рисунке?','надпочечники'),
+('07.jpeg','Какие органы выделены красным на рисунке?','надпочечники'),
 ('27.jpeg','Перед вами последовательность ДНК: ТЦГАЦЦЦГАТТА
 Напишите, какую последовательность аминокислот она будет кодировать.Для поиска аминокислот используйте данную таблицу генетического кода иРНК, причем каждую аминокислоту обозначьте одной латинской буквой( в таблице они красные).Случайно или нет - (конечно же, нет!) - последовательность аминокислот должна сложиться в название животного.  
 Ответ запишите в формате “ABC”
@@ -313,7 +313,7 @@ values
 31 45 26
 14 30 15 4
 6 28 7 50', 'дактиль'),  
-(1, 'В тексте ниже смешаны два литературных произведения. В ответе нужно указать оригинальные названия произведений в алфавитном порядке:
+(1, 'В тексте ниже смешаны два литературных произведения. В ответе нужно указать оригинальные названия произведений в алфавитном порядке через запятую:
 Жил-был в норе под землей кролик. Не в какой-то там мерзкой грязной сырой норе, где со всех сторон торчат чеширские хвосты  и противно пахнет кальяном, но и не в сухой песчаной голой норе, где не из чего выпить чаю и нет ни одной растибулки. Нет, нора была кроличья, а значит — благоустроенная'
 , 'Alice’sadventuresinWonderland,TheHobbit,orThereandBackAgain'),
 (1, 'Слова в этом стихотворении заменили, но сохранили ритм. Укажите фамилию автора:
@@ -354,7 +354,7 @@ values
 (1,'В тексте ниже смешаны два литературных произведения. В ответе нужно указать названия произведений на русском языке в алфавитном порядке через запятую:
 Милый дядюшка, Сириус Орионович! - писал он. - И пишу тебе письмо. Поздравляю вас с Рождеством и желаю тебе всего от Мерлина. Нету у меня ни отца, ни маменьки, только ты у меня один остался.
 А вчерась мне была отработка. Профессор пригласила меня к себе и заставила писать меня строчки за то, что я с ней не соглашался и у меня теперь болит рука.'
-, 'Ванька,ГарриПоттериорденфеникса'),
+, 'Ванька,ГарриПоттериОрденФеникса'),
 (1, 'Слова в этом стихотворении заменили, но сохранили ритм. Укажите фамилию автора:
 Однажды в студеную зимнюю пору
 Лизнул я железку то был паровоз
@@ -448,8 +448,8 @@ CREATE TABLE hist (
 );
 insert into hist (is_case_sensitive, picture, task, answer)
 values 
-(1, '', 'В честь известного революционного деятеля по имени Валериан был переименован целый город. 
-В ответ укажите современное название города.', 'Самара'),
+(1, '', 'В честь известного революционного деятеля по имени Валериан был переименован целый город. В ответ укажите современное название города.'
+, 'Самара'),
 (0, '', 'Расположите следующие события в хронологическом порядке. Ответ запишите в виде 1 2 3 4.
 1 Земская реформа Александра II
 2 Провозглашение Российской империи
@@ -700,10 +700,10 @@ Or even a pound inside.
 It must run and jump
 Grab everything, kick its legs
 Otherwise it will explode
-Bang-bang and there is none.', 'обезьянкивперед@обезьянкивперёд'),
+Bang-bang and there is none.', 'обезьянки,вперед!@обезьянки,вперёд!'),
 (1, 'Sam’s mother has three daughter and three sons. The first daughter’s name is Petunia. Lilly and Rose are twins.  Arthur is the eldest son. Then goes Lancelot. What is the youngest son’s name?'
 , 'Sam'),
-(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: erfowkir.', 'firework'),
+(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: erFowkir.', 'firework'),
 (0, 'Match the characters with the facts from their ‘biographies’. One fact is odd.
 1. Sherlock Holmes
 2. Peter Pan
@@ -720,7 +720,7 @@ f. plays the viola
 Ответ запишите в форме 1a 2b', '1e2c3b4a5d'),
 (1,'This word is a name of an ancient god, who is as brisk and elusive as metal named after him. What is it?','Mercury'),
 (0, 'Mr.and Mrs. Plum have five sons and each son has one sister. How many people are in their family?(Put a number)', '8'),
-(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: rbceaelte', 'celebrate'),
+(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: rbCeaelte', 'celebrate'),
 (1, 'We’ve translated a fragment of a song from a popular Russian cartoon into English. What is the name of the cartoon in Russian?
 Here is an empty pot
 It’s a very simple thing
@@ -728,7 +728,7 @@ It won’t get lost anywhere
 That’s why the empty pot
 Is valued a lot.', 'Винни-Пухиденьзабот'),
 (0, 'There are fifty cows, five dogs, one horse and one shepherd. How many feet are there?', '2'),
-(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: rnsetep', 'present'),
+(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: rnseteP', 'present'),
 (0, 'Match the characters with the facts from their ‘biographies’. One fact is odd.
 1. Lancelot
 2. Miss Marple
@@ -744,7 +744,7 @@ d. wears a straw hat
 e. carries an umbrella 
 f. wears a boa as a boa
 Ответ запишите в форме 1а 2b', '1b2d3e4f5a'),
-(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: tiighmdn', 'midnight'),
+(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: tiighMdn', 'midnight'),
 (0, 'Match the characters with the facts from their ‘biographies’. One fact is odd.
 1. Alice
 2. Oliver Twist
@@ -759,7 +759,7 @@ d. gets into a dream
 e. gets into the past and the future
 f. gets a loving family
 Ответ запишите в форме 1а 2b', '1d2f3e4a5c'),
-(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: iotcnetf', 'confetti'),
+(0, 'This scrambled word is about New Year’s day. We highlighted the first letter of the word. Unscramble it: iotCnetf', 'confetti'),
 (0, 'We’ve translated a fragment of a song from a popular Russian cartoon into English. What is the name of the cartoon in Russian?
 Night will pass
 Pure morning will come
