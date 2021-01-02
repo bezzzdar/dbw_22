@@ -94,13 +94,19 @@ int main(int argc, char* argv[]) {
     });
 
     // on signal
-    struct sigaction sig_action;
+    struct sigaction action_sigint;
+    struct sigaction action_sigterm;
 
-    sig_action.sa_handler = SigHandler;
-    sigemptyset(&sig_action.sa_mask);
-    sig_action.sa_flags = 0;
+    action_sigint.sa_handler = SigHandler;
+    sigemptyset(&action_sigint.sa_mask);
+    action_sigint.sa_flags = 0;
 
-    sigaction(SIGINT, &sig_action, NULL);
+    action_sigterm.sa_handler = SigHandler;
+    sigemptyset(&action_sigterm.sa_mask);
+    action_sigterm.sa_flags = 0;
+
+    sigaction(SIGINT, &action_sigint, NULL);
+    sigaction(SIGTERM, &action_sigterm, NULL);
 
     // no-buffer output
     std::cout << std::unitbuf;
