@@ -878,8 +878,8 @@ void CalculateResults() {
 
     f << "\nschools:\n";
     for (const auto school : points_per_school) {
-        f << '\t' << std::setw(10) << std::setfill('.') << school.first << ":" << school.second
-          << '\n';
+        f << '\t' << std::setw(10) << std::setfill('.') << std::left << school.first << ":"
+          << school.second << '\n';
     }
 
     f.close();
