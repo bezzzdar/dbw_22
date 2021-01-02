@@ -111,6 +111,8 @@ Task Connector::RequestTask(const Disciplines& discipline, const size_t n_task) 
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
 
+    std::cout << "n_task = " << n_task << "\n";
+
     sql_request << "SELECT "
                 << "task, picture FROM dialogue2020." << discipline_name << " WHERE "
                 << "id=" << n_task;
@@ -138,7 +140,7 @@ void Connector::RegisterCorrectAnswer(const int user_id, const Disciplines& disc
     sql_request.str("");
 
     sql_request << "UPDATE dialogue2020." << discipline_name << " SET solved"
-                << "=solved+1 WHERE task_id=" << task_id;
+                << "=solved+1 WHERE id=" << task_id;
     stmt_->execute(sql_request.str().c_str());
     sql_request.str("");
 

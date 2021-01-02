@@ -12,6 +12,11 @@
 #include <sstream>
 #include <vector>
 
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #include "bot_utils.h"
 #include "db_api.h"
 
@@ -57,6 +62,7 @@ struct UserInfo {
 void InitTasksStack(TasksStack* stack, db_api::Connector& conn);
 void ReadUserInfo(const std::string& path_to_save);
 void SerializeUserInfo();
+void SigHandler(int s);
 
 // ====================
 // GLOBALS
@@ -67,16 +73,30 @@ std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
 // MAIN
 int main(int argc, char* argv[]) {
     // back-up data storage
+    // on exception (technically impossible, but let it be, just in case)
     std::set_terminate([]() {
         std::cout << "Unhandled exception or abort occured!\n" << std::endl;
+
         SerializeUserInfo();
+
         std::abort();
     });
 
+    // on normal termination
     std::atexit([]() {
         std::cout << "Bot terminated!\n" << std::endl;
+
         SerializeUserInfo();
     });
+
+    // on signal
+    struct sigaction sig_action;
+
+    sig_action.sa_handler = SigHandler;
+    sigemptyset(&sig_action.sa_mask);
+    sig_action.sa_flags = 0;
+
+    sigaction(SIGINT, &sig_action, NULL);
 
     // arg parsing
     // assert(argc == 4);
@@ -90,7 +110,7 @@ int main(int argc, char* argv[]) {
     // const std::string hostname = "tcp://LAPTOP-E950M0TH:3306";
     // const std::string password = "****";
 
-    const std::string path_to_save = (argc == 5) ? (std::string(argv[5])) : (std::string(""));
+    const std::string path_to_save = (argc == 5) ? (std::string(argv[4])) : (std::string(""));
 
     // path initialization
     std::string path_to_pics{argv[0]};
@@ -112,7 +132,6 @@ int main(int argc, char* argv[]) {
     }
 
     // main entities
-
     db_api::Connector conn(hostname.c_str(), username.c_str(), password.c_str(), "dialogue2020");
 
     TgBot::Bot bot(BOT_TOKEN);
@@ -621,10 +640,27 @@ int main(int argc, char* argv[]) {
 
     TgBot::TgLongPoll longPoll(bot);
 
-    while (true) {
-        std::cout << "Long poll started\n";
+    // int i = 0;
+    try {
+        while (true) {
+            std::cout << "Long poll started\n";
 
-        longPoll.start();
+            longPoll.start();
+
+            //     if (i == 10) {
+            //         throw 1;
+            //     } else {
+            //         i++;
+            //     }
+        }
+    } catch (const std::runtime_error& re) {
+        std::cerr << "Runtime error: " << re.what() << std::endl;
+
+        SerializeUserInfo();
+    } catch (const std::exception& ex) {
+        std::cerr << "Error occurred: " << ex.what() << std::endl;
+
+        SerializeUserInfo();
     }
 
     // try {
@@ -739,4 +775,12 @@ void SerializeUserInfo() {
     f.close();
 
     return;
+}
+
+void SigHandler(int s) {
+    printf("Caught signal %d\n", s);
+
+    // SerializeUserInfo();
+
+    exit(1);
 }
