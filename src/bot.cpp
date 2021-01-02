@@ -98,8 +98,11 @@ int main(int argc, char* argv[]) {
 
     sigaction(SIGINT, &sig_action, NULL);
 
+    // no-buffer output
+    std::cout << std::unitbuf;
+
     // arg parsing
-    // assert(argc == 4);
+    // assert(argc >= 4);
 
     // parameters of the DB
     const std::string hostname(argv[1]);
@@ -343,15 +346,29 @@ int main(int argc, char* argv[]) {
                                                   db_api::discipline_to_string.at(discipline) +
                                                   '/' + task.pic_name + '\0';
 
-                        std::cout << "sending photo: <" << path_to_pic << ">\n";
-
                         std::string mime_type = "image/";
 
-                        const auto iter_dir = path_to_pics.rfind('.');
-                        mime_type += path_to_pics.substr(iter_dir + 1);
+                        const auto iter_dir = task.pic_name.rfind('.');
+                        mime_type += task.pic_name.substr(iter_dir + 1);
 
-                        bot.getApi().sendPhoto(chat_id,
-                                               TgBot::InputFile::fromFile(path_to_pic, mime_type));
+                        std::cout << "sending photo 1: <" << path_to_pic << "> <" << mime_type
+                                  << ">\n";
+
+                        try {
+                            bot.getApi().sendPhoto(
+                                chat_id, TgBot::InputFile::fromFile(path_to_pic, mime_type));
+                        } catch (TgBot::TgException& tgex) {
+                            std::cout << "error sending photo:\n";
+                            std::cout << tgex.what() << std::endl;
+
+                            reply.str("");
+
+                            reply << "Извини, произошла ошибка при отправке фото к этому заданию. "
+                                     "Порешай пока другие и через какое то время попытайся "
+                                     "вернуться к этому. Прости(\n";
+
+                            bot.getApi().sendMessage(chat_id, reply.str());
+                        }
                     }
                 } else {
                     CHAT_ID_TO_USER_INFO[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
@@ -425,15 +442,28 @@ int main(int argc, char* argv[]) {
                                               db_api::discipline_to_string.at(discipline) + '/' +
                                               task.pic_name + '\0';
 
-                    std::cout << "sending photo: <" << path_to_pic << ">\n";
-
                     std::string mime_type = "image/";
 
-                    const auto iter_dir = path_to_pics.rfind('.');
-                    mime_type += path_to_pics.substr(iter_dir + 1);
+                    const auto iter_dir = task.pic_name.rfind('.');
+                    mime_type += task.pic_name.substr(iter_dir + 1);
 
-                    bot.getApi().sendPhoto(chat_id,
-                                           TgBot::InputFile::fromFile(path_to_pic, mime_type));
+                    std::cout << "sending photo 2: <" << path_to_pic << "> <" << mime_type << ">\n";
+
+                    try {
+                        bot.getApi().sendPhoto(chat_id,
+                                               TgBot::InputFile::fromFile(path_to_pic, mime_type));
+                    } catch (TgBot::TgException& tgex) {
+                        std::cout << "error sending photo:\n";
+                        std::cout << tgex.what() << std::endl;
+
+                        reply.str("");
+
+                        reply << "Извини, произошла ошибка при отправке фото к этому заданию. "
+                                 "Порешай пока другие и через какое то время попытайся "
+                                 "вернуться к этому. Прости(\n";
+
+                        bot.getApi().sendMessage(chat_id, reply.str());
+                    }
                 }
             } else if (StringTools::startsWith(query_data, "choose_button")) {
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
@@ -607,15 +637,29 @@ int main(int argc, char* argv[]) {
                                                   db_api::discipline_to_string.at(discipline) +
                                                   '/' + task.pic_name + '\0';
 
-                        std::cout << "sending photo: <" << path_to_pic << ">\n";
-
                         std::string mime_type = "image/";
 
-                        const auto iter_dir = path_to_pics.rfind('.');
-                        mime_type += path_to_pics.substr(iter_dir + 1);
+                        const auto iter_dir = task.pic_name.rfind('.');
+                        mime_type += task.pic_name.substr(iter_dir + 1);
 
-                        bot.getApi().sendPhoto(chat_id,
-                                               TgBot::InputFile::fromFile(path_to_pic, mime_type));
+                        std::cout << "sending photo 3: <" << path_to_pic << "> <" << mime_type
+                                  << ">\n";
+
+                        try {
+                            bot.getApi().sendPhoto(
+                                chat_id, TgBot::InputFile::fromFile(path_to_pic, mime_type));
+                        } catch (TgBot::TgException& tgex) {
+                            std::cout << "error sending photo:\n";
+                            std::cout << tgex.what() << std::endl;
+
+                            reply.str("");
+
+                            reply << "Извини, произошла ошибка при отправке фото к этому заданию. "
+                                     "Порешай пока другие и через какое то время попытайся "
+                                     "вернуться к этому. Прости(\n";
+
+                            bot.getApi().sendMessage(chat_id, reply.str());
+                        }
                     }
                 } else {
                     reply << "Больше вопросов в этой категории нет. Но ты всегда можешь "
@@ -648,12 +692,8 @@ int main(int argc, char* argv[]) {
         }
     } catch (const std::runtime_error& re) {
         std::cerr << "Runtime error: " << re.what() << std::endl;
-
-        SerializeUserInfo();
     } catch (const std::exception& ex) {
         std::cerr << "Error occurred: " << ex.what() << std::endl;
-
-        SerializeUserInfo();
     }
 
     return 0;
