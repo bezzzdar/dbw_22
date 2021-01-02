@@ -341,7 +341,7 @@ int main(int argc, char* argv[]) {
                     if (!task.pic_name.empty()) {
                         std::string path_to_pic = path_to_pics +
                                                   db_api::discipline_to_string.at(discipline) +
-                                                  "/" + task.pic_name;
+                                                  '/' + task.pic_name + '\0';
 
                         std::cout << "sending photo: <" << path_to_pic << ">\n";
 
@@ -422,8 +422,8 @@ int main(int argc, char* argv[]) {
 
                 if (!task.pic_name.empty()) {
                     std::string path_to_pic = path_to_pics +
-                                              db_api::discipline_to_string.at(discipline) + "/" +
-                                              task.pic_name;
+                                              db_api::discipline_to_string.at(discipline) + '/' +
+                                              task.pic_name + '\0';
 
                     std::cout << "sending photo: <" << path_to_pic << ">\n";
 
@@ -605,7 +605,7 @@ int main(int argc, char* argv[]) {
                     if (!task.pic_name.empty()) {
                         std::string path_to_pic = path_to_pics +
                                                   db_api::discipline_to_string.at(discipline) +
-                                                  "/" + task.pic_name;
+                                                  '/' + task.pic_name + '\0';
 
                         std::cout << "sending photo: <" << path_to_pic << ">\n";
 
