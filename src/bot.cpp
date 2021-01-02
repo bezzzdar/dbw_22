@@ -350,6 +350,7 @@ int main(int argc, char* argv[]) {
 
                         const auto iter_dir = path_to_pic.rfind('.');
                         mime_type += path_to_pic.substr(iter_dir + 1);
+                        mime_type += '\0';
 
                         std::cout << "sending photo 1: <" << path_to_pic << "> <" << mime_type
                                   << ">\n";
@@ -446,6 +447,7 @@ int main(int argc, char* argv[]) {
 
                     const auto iter_dir = path_to_pic.rfind('.');
                     mime_type += path_to_pic.substr(iter_dir + 1);
+                    mime_type += '\0';
 
                     std::cout << "sending photo 2: <" << path_to_pic << "> <" << mime_type << ">\n";
 
@@ -641,6 +643,7 @@ int main(int argc, char* argv[]) {
 
                         const auto iter_dir = path_to_pic.rfind('.');
                         mime_type += path_to_pic.substr(iter_dir + 1);
+                        mime_type += '\0';
 
                         std::cout << "sending photo 3: <" << path_to_pic << "> <" << mime_type
                                   << ">\n";
