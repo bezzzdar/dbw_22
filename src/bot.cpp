@@ -852,28 +852,58 @@ void SerializeUserInfo() {
 }
 
 void CalculateResults() {
-    std::map<int, int>                       points_per_school{};
-    std::pair<std::vector<std::string>, int> winner{};
+    std::map<int, int> points_per_school{};
+    // std::pair<std::vector<std::string>, int> winner{};
+
+    std::vector<std::pair<std::vector<std::string>, int>> winners{};
 
     std::ofstream f;
     f.open("results.log", std::ofstream::out | std::ofstream::trunc);
 
     for (const auto& pair : CHAT_ID_TO_USER_INFO) {
-        if (pair.second.user_score > winner.second) {
-            winner.first.clear();
+        // if (pair.second.user_score > winner.second) {
+        //     winner.first.clear();
 
-            winner.first.push_back(pair.second.name);
-            winner.second = pair.second.user_score;
-        } else if (pair.second.user_score == winner.second) {
-            winner.first.push_back(pair.second.name);
-        }
+        //     winner.first.push_back(pair.second.name);
+        //     winner.second = pair.second.user_score;
+        // } else if (pair.second.user_score == winner.second) {
+        //     winner.first.push_back(pair.second.name);
+        // }
 
         points_per_school[pair.second.school] += pair.second.user_score;
     }
 
+    for (size_t i = 0; i < 5; i++) {
+        for (const auto& pair : CHAT_ID_TO_USER_INFO) {
+            for (size_t j = 0; j < i; j++) {
+                if (pair.second.user_score >= winners[j].second) {
+                    continue;
+                }
+            }
+
+            if (pair.second.user_score > winners[i].second) {
+                winners[i].first.clear();
+
+                winners[i].first.push_back(pair.second.name);
+                winners[i].second = pair.second.user_score;
+            } else if (pair.second.user_score == winners[i].second) {
+                winners[i].first.push_back(pair.second.name);
+            }
+        }
+    }
+
     f << "winner user(s):\n";
-    for (const auto& name : winner.first) {
-        f << '\t' << '<' << name << '>' << '\n';
+    // for (const auto& name : winner.first) {
+    //     f << '\t' << '<' << name << '>' << '\n';
+    // }
+    for (const auto& token : winners) {
+        f << '\t' << std::setw(10) << std::setfill('.') << std::left << token.second << ":";
+
+        for (const auto& name : token.first) {
+            f << '<' << name << '>';
+        }
+
+        f << '\n';
     }
 
     f << "\nschools:\n";
