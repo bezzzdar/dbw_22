@@ -852,6 +852,8 @@ void SerializeUserInfo() {
 }
 
 void CalculateResults() {
+    std::cout << "calculationg results...\n";
+
     std::map<int, int> points_per_school{};
     // std::pair<std::vector<std::string>, int> winner{};
 
@@ -859,6 +861,10 @@ void CalculateResults() {
 
     std::ofstream f;
     f.open("results.log", std::ofstream::out | std::ofstream::trunc);
+
+    if (!f.is_open()) {
+        std::cout << "not open!\n";
+    }
 
     for (const auto& pair : CHAT_ID_TO_USER_INFO) {
         // if (pair.second.user_score > winner.second) {
