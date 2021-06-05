@@ -7,4 +7,4 @@
 
 # NOTES
 
-it may be needed to make tweaks in `CMakeLists.txt` and headers of `cppconn` and `tg-bot` libraries. but main functionality should remain the same
+it may be needed to make tweaks in `CMakeLists.txt` and headers (tg bot and cpp connector). but main functionality should remain the same

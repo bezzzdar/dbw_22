@@ -1,25 +1,34 @@
 #ifndef __DIALOGUE_DB_API_H_INCLUDED__
 #define __DIALOGUE_DB_API_H_INCLUDED__
 
-#include <cppconn/driver.h>
-#include <cppconn/prepared_statement.h>
-#include <iostream>
+// #include <cppconn/driver.h>
+// #include <cppconn/prepared_statement.h>
+
 #include <sstream>
+#include <iostream>
+
+#include <mysql-cppconn-8/mysql/jdbc.h>
+#include <mysqlx/xdevapi.h>
 
 #include <map>
 #include <string>
 
 namespace db_api {
+struct Task {
+    std::string text;
+    std::string pic_name;
+};
+
 enum Disciplines {
     PHY,
     MATH,
     RUS,
     BIO,
     COD,
-    GEN,
+    CULT,
     HIST,
     CHEM,
-    SOC,
+    ENG,
     NONE,
 };
 
@@ -29,10 +38,10 @@ const std::map<Disciplines, const char*> discipline_to_string{
     {RUS, "rus"},
     {BIO, "bio"},
     {COD, "cod"},
-    {GEN, "gen"},
+    {CULT, "cult"},
     {HIST, "hist"},
     {CHEM, "chem"},
-    {SOC, "soc"},
+    {ENG, "eng"},
     {NONE, "none"},
 };
 
@@ -72,10 +81,9 @@ class Connector {
     void RemoveUser(const int user_id);
     bool CheckAnswer(const std::string& user_answer, const Disciplines& discipline,
                      const size_t n_task);
-
-    std::string RequestTask(const Disciplines& discipline, const size_t n_task);
-    void        RegisterCorrectAnswer(const int user_id, const Disciplines& discipline);
-    int         RequestNumberTasks(const Disciplines& discipline);
+    Task RequestTask(const Disciplines& discipline, const size_t n_task);
+    void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline, const size_t task_id);
+    int  RequestNumberTasks(const Disciplines& discipline);
 
     int RequestUserScore(const int user_id);
 
