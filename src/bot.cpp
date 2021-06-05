@@ -922,7 +922,7 @@ void CalculateResults() {
 void SigHandler(int s) {
     printf("Caught signal %d\n", s);
 
-    SerializeUserInfo();
+    // SerializeUserInfo();
 
     exit(1);
 }
