@@ -225,48 +225,46 @@ int main(int argc, char* argv[]) {
     tasks_keyboard->inlineKeyboard.push_back(tasks_row0);
 
     // bot "/start" handler
-    bot.getEvents().onCommand(
-        "start", [&bot /*, &CHAT_ID_TO_USER_INFO */](TgBot::Message::Ptr message) {
-            const auto chat_id = message->chat->id;
+    bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
+        const auto chat_id = message->chat->id;
 
-            std::stringstream reply;
+        std::stringstream reply;
 
-            if (CHAT_ID_TO_USER_INFO[chat_id].state < BotState::REGISTERING_NAME) {
-                CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_NAME;
+        if (CHAT_ID_TO_USER_INFO[chat_id].state < BotState::REGISTERING_NAME) {
+            CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_NAME;
 
-                reply << "Привет! Скажи имя, под которым ты хочешь, чтобы я тебя "
-                         "зарегистрировал в формате Имя Фамилия, пожалуйста\n";
-
-                bot.getApi().sendMessage(chat_id, reply.str());
-            } else {
-                reply << "Жду ввода имени...\n";
-
-                bot.getApi().sendMessage(chat_id, reply.str());
-            }
-        });
-
-    // bot additional commands
-    bot.getEvents().onCommand(
-        "exit", [&bot, /* &CHAT_ID_TO_USER_INFO, */ &conn](TgBot::Message::Ptr message) {
-            const auto chat_id = message->chat->id;
-
-            std::stringstream reply;
-
-            CHAT_ID_TO_USER_INFO.erase(chat_id);
-
-            reply << "Чтож, пока! За свои старания ты получил(а) "
-                  << conn.RequestUserScore(CHAT_ID_TO_USER_INFO[chat_id].user_id)
-                  << " условных очков. Этот результат никуда не денется, и будет сохранен в нашей "
-                     "базе данных под твоим именем, не волнуйся\n";
+            reply << "Привет! Скажи имя, под которым ты хочешь, чтобы я тебя "
+                     "зарегистрировал в формате Имя Фамилия, пожалуйста\n";
 
             bot.getApi().sendMessage(chat_id, reply.str());
-        });
+        } else {
+            reply << "Жду ввода имени...\n";
+
+            bot.getApi().sendMessage(chat_id, reply.str());
+        }
+    });
+
+    // bot additional commands
+    bot.getEvents().onCommand("exit", [&bot, &conn](TgBot::Message::Ptr message) {
+        const auto chat_id = message->chat->id;
+
+        std::stringstream reply;
+
+        CHAT_ID_TO_USER_INFO.erase(chat_id);
+
+        reply << "Чтож, пока! За свои старания ты получил(а) "
+              << conn.RequestUserScore(CHAT_ID_TO_USER_INFO[chat_id].user_id)
+              << " условных очков. Этот результат никуда не денется, и будет сохранен в нашей "
+                 "базе данных под твоим именем, не волнуйся\n";
+
+        bot.getApi().sendMessage(chat_id, reply.str());
+    });
 
     // bot logic on user button input
     bot.getEvents().onCallbackQuery([&bot,
                                      &tasks_keyboard,
                                      &disciplines_keyboard,
-                                     /* &CHAT_ID_TO_USER_INFO, */ &conn,
+                                     &conn,
                                      &path_to_pics](TgBot::CallbackQuery::Ptr query) {
         // TODO: add code generation / define to avoid this copy-paste
         std::string query_data = query->data;
@@ -512,7 +510,6 @@ int main(int argc, char* argv[]) {
     // bot logic on any non-command message
     bot.getEvents().onNonCommandMessage([&bot,
                                          &conn,
-                                         /* &CHAT_ID_TO_USER_INFO, */
                                          &disciplines_keyboard,
                                          &tasks_keyboard,
                                          &path_to_pics](const TgBot::Message::Ptr& message) {
