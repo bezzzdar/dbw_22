@@ -20,8 +20,6 @@
 #include "bot_utils.h"
 #include "db_api.h"
 
-const char* BOT_TOKEN = "1417068350:AAGHSRRvimiHNWIMgboNm1xUr99D_7-X8gE";
-
 // ====================
 // TYPES
 
@@ -60,6 +58,7 @@ struct UserInfo {
 
 // ====================
 // FUNC DECLARATION
+
 void InitTasksStack(TasksStack* stack, db_api::Connector& conn);
 void ReadUserInfo(const std::string& path_to_save);
 void SerializeUserInfo();
@@ -68,11 +67,13 @@ void SigHandler(int s);
 
 // ====================
 // GLOBALS
+
 const char*             BOT_TOKEN = "1417068350:AAGHSRRvimiHNWIMgboNm1xUr99D_7-X8gE";
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
 
 // ====================
 // MAIN
+
 int main(int argc, char* argv[]) {
     // back-up data storage
     // on unhandled exception
@@ -93,7 +94,7 @@ int main(int argc, char* argv[]) {
         CalculateResults();
     });
 
-    // on signal
+    // on signal. if bot terminates unexpectedly, it will serialize user's data
     struct sigaction action_sigint;
     struct sigaction action_sigterm;
 
@@ -112,8 +113,6 @@ int main(int argc, char* argv[]) {
     std::cout << std::unitbuf;
 
     // arg parsing
-    // assert(argc >= 4);
-
     // parameters of the DB
     const std::string hostname(argv[1]);
     const std::string username(argv[2]);
@@ -926,7 +925,7 @@ void CalculateResults() {
 void SigHandler(int s) {
     printf("Caught signal %d\n", s);
 
-    // SerializeUserInfo();
+    SerializeUserInfo();
 
     exit(1);
 }
