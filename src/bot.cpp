@@ -14,6 +14,8 @@
 
 const char* BOT_TOKEN = "1417068350:AAGHSRRvimiHNWIMgboNm1xUr99D_7-X8gE";
 
+// user's possible states.
+// NOTE: needs it's own state machine to avoid illegal states and allow for clearer state changes
 enum BotState {
     NO_STATE,             // current user is unknown
     REGISTERING_NAME,     // waiting for name input
@@ -32,6 +34,7 @@ enum BotState {
 
 typedef std::map<db_api::Disciplines, std::list<size_t>> TasksStack;
 
+// information about each user. can be broadened if needed
 struct UserInfo {
     std::string name = "";
     int         school = -1;
@@ -43,11 +46,17 @@ struct UserInfo {
     TasksStack tasks_stack;
 };
 
+/**
+ * @brief initializes stack of tasks. tasks are read from database
+ * @param stack - user's stack of tasks
+ * @param conn - initialized connector to the database
+ */
 void InitTasksStack(TasksStack* stack, db_api::Connector& conn);
 
 int main(int argc, char* argv[]) {
     assert(argc == 4);
 
+    // parameters of the DB
     const std::string hostname(argv[1]);
     const std::string username(argv[2]);
     const std::string password(argv[3]);
@@ -56,11 +65,10 @@ int main(int argc, char* argv[]) {
 
     TgBot::Bot bot(BOT_TOKEN);
 
-    // BotState state_flag = BotState::NO_STATE;
-
+    // global strucure for users
     std::map<int, UserInfo> chat_id_to_user_info{};
 
-    // keyboards
+    // telegram keyboards
     TgBot::InlineKeyboardMarkup::Ptr disciplines_keyboard(new TgBot::InlineKeyboardMarkup);
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row0;
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row1;
@@ -136,7 +144,7 @@ int main(int argc, char* argv[]) {
 
     tasks_keyboard->inlineKeyboard.push_back(tasks_row0);
 
-    // startup
+    // bot startup
     bot.getEvents().onCommand("start", [&bot, &chat_id_to_user_info](TgBot::Message::Ptr message) {
         const auto chat_id = message->chat->id;
 
@@ -156,7 +164,7 @@ int main(int argc, char* argv[]) {
         }
     });
 
-    // commands
+    // bot commands
     bot.getEvents().onCommand(
         "exit", [&bot, &chat_id_to_user_info, &conn](TgBot::Message::Ptr message) {
             const auto chat_id = message->chat->id;
@@ -173,9 +181,7 @@ int main(int argc, char* argv[]) {
             bot.getApi().sendMessage(chat_id, reply.str());
         });
 
-    // unknown commands
-
-    // buttons
+    // bot logic on user button input
     bot.getEvents().onCallbackQuery(
         [&bot, &tasks_keyboard, &disciplines_keyboard, &chat_id_to_user_info, &conn](
             TgBot::CallbackQuery::Ptr query) {
@@ -249,7 +255,6 @@ int main(int argc, char* argv[]) {
                 }
 
                 if (discipline != db_api::Disciplines::NONE) {
-                    // FIXME: no support for image questions
                     bool is_depleted = user_info.tasks_stack[discipline].empty();
 
                     if (!is_depleted) {
@@ -333,7 +338,7 @@ int main(int argc, char* argv[]) {
             return;
         });
 
-    // main logic
+    // bot logic on user text input
     bot.getEvents().onNonCommandMessage([&bot,
                                          &conn,
                                          &chat_id_to_user_info,
@@ -352,7 +357,12 @@ int main(int argc, char* argv[]) {
 
         std::stringstream reply;
 
+        // large switch-case for each user's state
+        // TODO: if user state is to be remade with it's own state machine, this swould be the part
+        // of the machine, something llike "enumerate_state" and each state change should be done
+        // via this stete machine
         switch (chat_id_to_user_info[chat_id].state) {
+        // uninitialized user
         case NO_STATE:
             bot.getApi().sendMessage(chat_id, "Чтобы начать, пожалуйста, введи команду /start");
             break;
@@ -459,6 +469,7 @@ int main(int argc, char* argv[]) {
             break;
         }
 
+        // checking answer
         if (current_discipline != db_api::Disciplines::NONE) {
             message_text = bot_utils::ToLowerNoSpaces(message_text);
 
@@ -499,6 +510,8 @@ int main(int argc, char* argv[]) {
 
         return;
     });
+
+    // long polling - infinite send-recieve to telegramm servers
     try {
         printf("Bot username: %s\n", bot.getApi().getMe()->username.c_str());
         TgBot::TgLongPoll longPoll(bot);

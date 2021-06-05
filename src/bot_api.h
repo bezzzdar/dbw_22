@@ -9,8 +9,7 @@
 
 namespace bot_api {
 struct State {
-    // int user_id_bd;
-
+    // bot's state. chat id in telegram to id in database
     std::map<int, int> chat_id_to_db_user_id;
 };
 
@@ -21,10 +20,13 @@ class DBot {
         db_connector_ = std::move(db_connector);
     };
 
-    void Help(int chat_id);
-    int  RegisterUser(int chat_id);
-    int  RequestNewTask(int chat_id);
-    int  ChangeDiscipline(int chat_id);
+    void Help(int chat_id); // unimplemented, done inside bot's switch-case
+
+    int RegisterUser(int chat_id); // unused, done inside bot's switch-case
+
+    int RequestNewTask(int chat_id); // unimplemented, done inside bot's switch-case
+
+    int ChangeDiscipline(int chat_id); // unimplemented, done inside bot's switch-case
 
   private:
     TgBot::Bot                         bot_;

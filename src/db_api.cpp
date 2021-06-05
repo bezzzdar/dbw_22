@@ -1,9 +1,9 @@
 #include "db_api.h"
 #include "bot_utils.h"
 
-#include <string>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 namespace db_api {
 int Connector::AddUser(const std::string& name, const int school_n) {

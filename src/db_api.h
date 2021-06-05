@@ -1,10 +1,10 @@
 #ifndef __DIALOGUE_DB_API_H_INCLUDED__
 #define __DIALOGUE_DB_API_H_INCLUDED__
 
-#include <iostream>
 #include <cppconn/driver.h>
-#include <sstream>
 #include <cppconn/prepared_statement.h>
+#include <iostream>
+#include <sstream>
 
 #include <map>
 #include <string>
@@ -72,7 +72,7 @@ class Connector {
     void RemoveUser(const int user_id);
     bool CheckAnswer(const std::string& user_answer, const Disciplines& discipline,
                      const size_t n_task);
-    // FIXME: if images are added, needs to be reworked
+
     std::string RequestTask(const Disciplines& discipline, const size_t n_task);
     void        RegisterCorrectAnswer(const int user_id, const Disciplines& discipline);
     int         RequestNumberTasks(const Disciplines& discipline);
