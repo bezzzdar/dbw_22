@@ -28,17 +28,19 @@
 enum BotState {
     NO_STATE,             // current user is unknown
     REGISTERING_NAME,     // waiting for name input
-    REGISTERING_SCHOOL,   // waiting for school number
+    REGISTERING_SCHOOL,   // waiting for school number  
+    REGISTERING_GRADE,    // waiting for grade number  
     NO_DISCIPLINE_CHOSEN, // waiting for discipline choise
     PHY_CHOSEN,           // waiting for answer
     BIO_CHOSEN,           // waiting for answer
-    RUS_CHOSEN,           // waiting for answer
+    GEO_CHOSEN,           // waiting for answer
     COD_CHOSEN,           // waiting for answer
     HIST_CHOSEN,          // waiting for answer
     CHEM_CHOSEN,          // waiting for answer
     ENG_CHOSEN,           // waiting for answer
     CULT_CHOSEN,          // waiting for answer
     MATH_CHOSEN,          // waiting for answer
+    SOCIAL_CHOSEN,          // waiting for answer
 };
 
 typedef std::map<db_api::Disciplines, std::list<size_t>> TasksStack;
@@ -47,6 +49,7 @@ typedef std::map<db_api::Disciplines, std::list<size_t>> TasksStack;
 struct UserInfo {
     std::string name = "";
     int         school = -1;
+    int         grade = -1;
 
     BotState state = NO_STATE;
 
@@ -68,7 +71,7 @@ void SigHandler(int s);
 // ====================
 // GLOBALS
 
-const char*             BOT_TOKEN = "1417068350:AAGHSRRvimiHNWIMgboNm1xUr99D_7-X8gE";
+const char*             BOT_TOKEN = "2138233549:AAGSwvfWAAYbP1ORWSqtjopDUOp0ku0a83g";
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
 
 // ====================
@@ -144,7 +147,7 @@ int main(int argc, char* argv[]) {
     }
 
     // main entities
-    db_api::Connector conn(hostname.c_str(), username.c_str(), password.c_str(), "dialogue2020");
+    db_api::Connector conn(hostname.c_str(), username.c_str(), password.c_str(), "dialogue2022");
 
     TgBot::Bot bot(BOT_TOKEN);
 
@@ -155,6 +158,7 @@ int main(int argc, char* argv[]) {
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row2;
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row3;
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row4;
+    std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row5;
 
     TgBot::InlineKeyboardButton::Ptr phy(new TgBot::InlineKeyboardButton);
     phy->text = "физика";
@@ -164,12 +168,12 @@ int main(int argc, char* argv[]) {
     bio->text = "биология";
     bio->callbackData = "bio";
 
-    TgBot::InlineKeyboardButton::Ptr rus(new TgBot::InlineKeyboardButton);
-    rus->text = "русский";
-    rus->callbackData = "rus";
+    TgBot::InlineKeyboardButton::Ptr geo(new TgBot::InlineKeyboardButton);
+    geo->text = "география";
+    geo->callbackData = "geo";
 
     TgBot::InlineKeyboardButton::Ptr cod(new TgBot::InlineKeyboardButton);
-    cod->text = "программирование";
+    cod->text = "информатика";
     cod->callbackData = "cod";
 
     TgBot::InlineKeyboardButton::Ptr hist(new TgBot::InlineKeyboardButton);
@@ -192,21 +196,27 @@ int main(int argc, char* argv[]) {
     math->text = "математика";
     math->callbackData = "math";
 
+    TgBot::InlineKeyboardButton::Ptr social(new TgBot::InlineKeyboardButton);
+    social->text = "обществознание";
+    social->callbackData = "social";
+
     disciplines_row0.push_back(phy);
     disciplines_row0.push_back(bio);
-    disciplines_row1.push_back(rus);
+    disciplines_row1.push_back(geo);
     disciplines_row1.push_back(cod);
     disciplines_row2.push_back(hist);
     disciplines_row2.push_back(chem);
     disciplines_row3.push_back(cult);
     disciplines_row3.push_back(math);
     disciplines_row4.push_back(eng);
+    disciplines_row5.push_back(social);
 
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row0);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row1);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row2);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row3);
     disciplines_keyboard->inlineKeyboard.push_back(disciplines_row4);
+    disciplines_keyboard->inlineKeyboard.push_back(disciplines_row5);
 
     TgBot::InlineKeyboardMarkup::Ptr              tasks_keyboard(new TgBot::InlineKeyboardMarkup);
     std::vector<TgBot::InlineKeyboardButton::Ptr> tasks_row0;
@@ -250,12 +260,14 @@ int main(int argc, char* argv[]) {
 
         std::stringstream reply;
 
-        CHAT_ID_TO_USER_INFO.erase(chat_id);
+        //CHAT_ID_TO_USER_INFO.erase(chat_id);
 
         reply << "Чтож, пока! За свои старания ты получил(а) "
               << conn.RequestUserScore(CHAT_ID_TO_USER_INFO[chat_id].user_id)
               << " условных очков. Этот результат никуда не денется, и будет сохранен в нашей "
                  "базе данных под твоим именем, не волнуйся\n";
+
+        CHAT_ID_TO_USER_INFO.erase(chat_id);
 
         bot.getApi().sendMessage(chat_id, reply.str());
     });
@@ -291,12 +303,12 @@ int main(int argc, char* argv[]) {
                 reply << "Раздел биология:\n";
 
                 discipline = db_api::Disciplines::BIO;
-            } else if (StringTools::startsWith(query_data, "rus")) {
-                CHAT_ID_TO_USER_INFO[chat_id].state = BotState::RUS_CHOSEN;
+            } else if (StringTools::startsWith(query_data, "geo")) {
+                CHAT_ID_TO_USER_INFO[chat_id].state = BotState::GEO_CHOSEN;
 
-                reply << "Раздел русский:\n";
+                reply << "Раздел география:\n";
 
-                discipline = db_api::Disciplines::RUS;
+                discipline = db_api::Disciplines::GEO;
             } else if (StringTools::startsWith(query_data, "cod")) {
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::COD_CHOSEN;
 
@@ -318,7 +330,7 @@ int main(int argc, char* argv[]) {
             } else if (StringTools::startsWith(query_data, "cult")) {
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::CULT_CHOSEN;
 
-                reply << "Раздел культуры:\n";
+                reply << "Раздел культура:\n";
 
                 discipline = db_api::Disciplines::CULT;
             } else if (StringTools::startsWith(query_data, "math")) {
@@ -333,6 +345,12 @@ int main(int argc, char* argv[]) {
                 reply << "Раздел английский:\n";
 
                 discipline = db_api::Disciplines::ENG;
+            } else if (StringTools::startsWith(query_data, "social")) {
+                CHAT_ID_TO_USER_INFO[chat_id].state = BotState::SOCIAL_CHOSEN;
+
+                reply << "Раздел обществознание:\n";
+
+                discipline = db_api::Disciplines::SOCIAL;
             }
 
             if (discipline != db_api::Disciplines::NONE) {
@@ -340,7 +358,7 @@ int main(int argc, char* argv[]) {
 
                 if (!is_depleted) {
                     const auto task =
-                        conn.RequestTask(discipline, user_info.tasks_stack[discipline].front());
+                        conn.RequestTask(discipline, user_info.tasks_stack[discipline].front(), user_info.grade);
 
                     reply << task.text << '\n';
 
@@ -410,8 +428,8 @@ int main(int argc, char* argv[]) {
             case BotState::MATH_CHOSEN:
                 discipline = db_api::Disciplines::MATH;
                 break;
-            case BotState::RUS_CHOSEN:
-                discipline = db_api::Disciplines::RUS;
+            case BotState::GEO_CHOSEN:
+                discipline = db_api::Disciplines::GEO;
                 break;
             case BotState::BIO_CHOSEN:
                 discipline = db_api::Disciplines::BIO;
@@ -431,6 +449,9 @@ int main(int argc, char* argv[]) {
             case BotState::CHEM_CHOSEN:
                 discipline = db_api::Disciplines::CHEM;
                 break;
+            case BotState::SOCIAL_CHOSEN:
+                discipline = db_api::Disciplines::SOCIAL;
+                break;
             default:
                 return;
             }
@@ -448,7 +469,7 @@ int main(int argc, char* argv[]) {
                 CHAT_ID_TO_USER_INFO[chat_id].tasks_stack[discipline].pop_front();
 
                 const auto task = conn.RequestTask(
-                    discipline, CHAT_ID_TO_USER_INFO[chat_id].tasks_stack[discipline].front());
+                    discipline, CHAT_ID_TO_USER_INFO[chat_id].tasks_stack[discipline].front(), CHAT_ID_TO_USER_INFO[chat_id].grade);
 
                 reply << task.text << '\n';
 
@@ -548,7 +569,6 @@ int main(int argc, char* argv[]) {
                          "какой-то номер, спроси у них, какой\n";
 
                 CHAT_ID_TO_USER_INFO[chat_id].name = bot_utils::ToLowerNoSpaces(message_text);
-
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_SCHOOL;
             } else {
                 reply << "...\nА теперь без шуток, пожалуйста\n";
@@ -557,11 +577,13 @@ int main(int argc, char* argv[]) {
             bot.getApi().sendMessage(chat_id, reply.str());
 
             break;
+            
         case REGISTERING_SCHOOL:
             int  school_n;
             bool is_valid_n;
 
             try {
+                //reply << "перешли в case REGISTERING_SCHOOL\n";
                 school_n = std::stoi(message_text);
 
                 is_valid_n = bot_utils::IsValidSchool(school_n);
@@ -580,11 +602,53 @@ int main(int argc, char* argv[]) {
             }
 
             if (is_valid_n) {
-                reply << "Здорово, ты успешно зарегистрирован(а) как ученик школы № " << school_n
-                      << "\n";
+                reply << "Здорово, теперь введи номер своего класса. Только цифру, пожалуйста.\n ";
 
                 CHAT_ID_TO_USER_INFO[chat_id].school = school_n;
-                CHAT_ID_TO_USER_INFO[chat_id].user_id = conn.AddUser(user_info.name, school_n);
+            //  CHAT_ID_TO_USER_INFO[chat_id].user_id = conn.AddUser(user_info.name, school_n);
+                CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_GRADE;
+
+            //   InitTasksStack(&CHAT_ID_TO_USER_INFO[chat_id].tasks_stack, conn);
+
+             //   reply << "Теперь выбери, какие вопросы хочешь решать. Категорию можно "
+             //            "изменить в любой момент, так что не бойся экспериментировать\n";
+
+                bot.getApi().sendMessage(chat_id, reply.str());// false, 0, disciplines_keyboard);
+            } else {
+                bot.getApi().sendMessage(chat_id, reply.str());
+            }
+            break;
+
+        case REGISTERING_GRADE:
+            int grade_n;
+            bool is_valid_g;
+            
+            try {
+            
+                grade_n = std::stoi(message_text);
+
+                is_valid_g = bot_utils::IsValidGrade(grade_n);
+
+                if (!is_valid_g) {
+                    reply << "Уверен, класса с таким номером нет\n";
+                }
+            } catch (const std::invalid_argument& inv_arg) {
+                reply << "Пожалуйста, введи только номер класса. Только цифры\n";
+
+                is_valid_g = false;
+            }
+            catch (const std::out_of_range& oor) {
+                reply << "Столько классов в школе не бывает\n";
+
+                is_valid_g = false;
+            }
+
+            if (is_valid_g) {
+                reply << "Здорово, ты успешно зарегистрирован(а) как ученик " << grade_n << " класса школы № " << user_info.school
+                      << "\n";
+
+                CHAT_ID_TO_USER_INFO[chat_id].grade = grade_n;
+                CHAT_ID_TO_USER_INFO[chat_id].user_id = conn.AddUser(user_info.name, user_info.school, grade_n);
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
 
                 InitTasksStack(&CHAT_ID_TO_USER_INFO[chat_id].tasks_stack, conn);
@@ -598,6 +662,8 @@ int main(int argc, char* argv[]) {
             }
 
             break;
+
+
         case NO_DISCIPLINE_CHOSEN:
             reply << "Жмякни на кнопку с интересующей тебя категорией, пожалуйста\n";
 
@@ -609,8 +675,8 @@ int main(int argc, char* argv[]) {
         case BIO_CHOSEN:
             discipline = db_api::Disciplines::BIO;
             break;
-        case RUS_CHOSEN:
-            discipline = db_api::Disciplines::RUS;
+        case GEO_CHOSEN:
+            discipline = db_api::Disciplines::GEO;
             break;
         case COD_CHOSEN:
             discipline = db_api::Disciplines::COD;
@@ -638,12 +704,12 @@ int main(int argc, char* argv[]) {
         // checking answer
         if (discipline != db_api::Disciplines::NONE) {
             bool ans_is_correct = conn.CheckAnswer(
-                message_text, discipline, user_info.tasks_stack[discipline].front());
+                message_text, discipline, user_info.tasks_stack[discipline].front(), user_info.grade);
 
             if (ans_is_correct) {
                 const auto task_id = CHAT_ID_TO_USER_INFO[chat_id].tasks_stack[discipline].front();
 
-                conn.RegisterCorrectAnswer(user_id, discipline, task_id);
+                conn.RegisterCorrectAnswer(user_id, discipline, task_id, user_info.grade);
 
                 CHAT_ID_TO_USER_INFO[chat_id].tasks_stack[discipline].pop_front();
                 CHAT_ID_TO_USER_INFO[chat_id].user_score++;
@@ -654,7 +720,7 @@ int main(int argc, char* argv[]) {
                     reply << "Вот следующее задание:\n";
 
                     const auto task = conn.RequestTask(
-                        discipline, CHAT_ID_TO_USER_INFO[chat_id].tasks_stack[discipline].front());
+                        discipline, CHAT_ID_TO_USER_INFO[chat_id].tasks_stack[discipline].front(), CHAT_ID_TO_USER_INFO[chat_id].grade);
 
                     reply << task.text << '\n';
 
@@ -703,6 +769,7 @@ int main(int argc, char* argv[]) {
                             bot.getApi().sendMessage(chat_id, reply.str());
                         }
                     }
+                
                 } else {
                     reply << "Больше вопросов в этой категории нет. Но ты всегда можешь "
                              "попробовать другие)\n";
@@ -757,8 +824,8 @@ void InitTasksStack(TasksStack* stack, db_api::Connector& conn) {
                    conn.RequestNumberTasks(db_api::Disciplines::PHY));
     InitDiscipline(&((*stack)[db_api::Disciplines::MATH]),
                    conn.RequestNumberTasks(db_api::Disciplines::MATH));
-    InitDiscipline(&((*stack)[db_api::Disciplines::RUS]),
-                   conn.RequestNumberTasks(db_api::Disciplines::RUS));
+    InitDiscipline(&((*stack)[db_api::Disciplines::GEO]),
+                   conn.RequestNumberTasks(db_api::Disciplines::GEO));
     InitDiscipline(&((*stack)[db_api::Disciplines::BIO]),
                    conn.RequestNumberTasks(db_api::Disciplines::BIO));
     InitDiscipline(&((*stack)[db_api::Disciplines::COD]),
@@ -771,6 +838,8 @@ void InitTasksStack(TasksStack* stack, db_api::Connector& conn) {
                    conn.RequestNumberTasks(db_api::Disciplines::CHEM));
     InitDiscipline(&((*stack)[db_api::Disciplines::ENG]),
                    conn.RequestNumberTasks(db_api::Disciplines::ENG));
+    InitDiscipline(&((*stack)[db_api::Disciplines::SOCIAL]),
+                   conn.RequestNumberTasks(db_api::Disciplines::SOCIAL));
 
     return;
 }

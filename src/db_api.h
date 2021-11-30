@@ -7,7 +7,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <mysql-cppconn-8/mysql/jdbc.h>
+#include <mysql/jdbc.h>
 #include <mysqlx/xdevapi.h>
 
 #include <map>
@@ -22,7 +22,8 @@ struct Task {
 enum Disciplines {
     PHY,
     MATH,
-    RUS,
+    GEO,
+    SOCIAL,
     BIO,
     COD,
     CULT,
@@ -34,14 +35,15 @@ enum Disciplines {
 
 const std::map<Disciplines, const char*> discipline_to_string{
     {PHY, "phy"},
-    {MATH, "math"},
-    {RUS, "rus"},
+    {MATH, "math"},    
     {BIO, "bio"},
     {COD, "cod"},
     {CULT, "cult"},
     {HIST, "hist"},
     {CHEM, "chem"},
     {ENG, "eng"},
+    {GEO, "geo"},
+    {SOCIAL, "social"},
     {NONE, "none"},
 };
 
@@ -75,14 +77,15 @@ class Connector {
         delete stmt_;
         delete con_;
     }
-
-    int  AddUser(const std::string& name, const int school_n);
+    int relativeIdToAbsoluteId(const int task, const int grade, const std::string& name);
+    
+    int  AddUser(const std::string& name, const int school_n, const int grade_n);
     bool UsernameTaken(const std::string& name);
     void RemoveUser(const int user_id);
     bool CheckAnswer(const std::string& user_answer, const Disciplines& discipline,
-                     const size_t n_task);
-    Task RequestTask(const Disciplines& discipline, const size_t n_task);
-    void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline, const size_t task_id);
+                     const size_t n_task, const int n_grade);
+    Task RequestTask(const Disciplines& discipline, const size_t n_task, const int n_grade);
+    void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline, const size_t task_id, const int n_grade);
     int  RequestNumberTasks(const Disciplines& discipline);
 
     int RequestUserScore(const int user_id);

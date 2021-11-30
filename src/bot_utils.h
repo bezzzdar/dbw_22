@@ -10,6 +10,7 @@
 #include <vector>
 
 namespace bot_utils {
+    //todo: продумать расширение диапазона не тех символов
 const std::vector<std::string> bad_words{
     "hui",   "huy",   "хуй",   "хуе",  "хуё",   "хуя",   "хуи",   "sosi",
     "sosat", "sasi",  "sasat", "соси", "сосат", "сасат", "лох",   "пидр",
@@ -66,6 +67,16 @@ bool IsValidName(const std::string& name) {
 }
 
 bool IsValidSchool(const int number) {
+    for (const auto& num : funny_numbers) {
+        if (number == num) {
+            return false;
+        }
+    }
+
+    return number > 0;
+}
+
+bool IsValidGrade(const int number) {
     for (const auto& num : funny_numbers) {
         if (number == num) {
             return false;
