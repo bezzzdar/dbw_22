@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
               << " условных очков. Этот результат никуда не денется, и будет сохранен в нашей "
                  "базе данных под твоим именем, не волнуйся\n";
 
-        CHAT_ID_TO_USER_INFO.erase(chat_id);
+        //CHAT_ID_TO_USER_INFO.erase(chat_id);
 
         bot.getApi().sendMessage(chat_id, reply.str());
     });
@@ -312,7 +312,7 @@ int main(int argc, char* argv[]) {
             } else if (StringTools::startsWith(query_data, "cod")) {
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::COD_CHOSEN;
 
-                reply << "Раздел программирование:\n";
+                reply << "Раздел информатика:\n";
 
                 discipline = db_api::Disciplines::COD;
             } else if (StringTools::startsWith(query_data, "hist")) {
@@ -509,9 +509,9 @@ int main(int argc, char* argv[]) {
 
                         reply.str("");
 
-                        reply << "Если ты видишь это сообщение, костя так и не разобрался с "
+                        reply << "Если ты видишь это сообщение, Костя так и не разобрался с "
                                  "кодировками и фото не отправилось. Порешай пока другие задания и "
-                                 "через какое то время попытайся вернуться к этому. Прости(\n";
+                                 "через какое-то время попытайся вернуться к этому. Прости(\n";
 
                         bot.getApi().sendMessage(chat_id, reply.str());
                     }
@@ -696,6 +696,9 @@ int main(int argc, char* argv[]) {
         case MATH_CHOSEN:
             discipline = db_api::Disciplines::MATH;
             break;
+        case SOCIAL_CHOSEN:
+            discipline = db_api::Disciplines::SOCIAL;
+            break;
         default:
             discipline = db_api::Disciplines::PHY;
             break;
@@ -800,7 +803,7 @@ int main(int argc, char* argv[]) {
             longPoll.start();
         }
     } catch (const std::runtime_error& re) {
-        std::cerr << "Runtime error: " << re.what() << std::endl;
+        std::cerr << "blablalba Runtime error: " << re.what() << std::endl;
     } catch (const std::exception& ex) {
         std::cerr << "Error occurred: " << ex.what() << std::endl;
     }
