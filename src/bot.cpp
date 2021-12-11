@@ -20,6 +20,10 @@
 #include "bot_utils.h"
 #include "db_api.h"
 
+#include "parser.h"
+//s#include "lexer.h"
+//#include "instruction.h"
+
 // ====================
 // TYPES
 
