@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
     // const std::string hostname = "tcp://LAPTOP-E950M0TH:3306";
     // const std::string password = "****";
 
-    const std::string path_to_save = (argc == 5) ? (std::string(argv[4])) : (std::string(""));
+    const std::string path_to_save = (argc == 5) ? (std::string(argv[4])) : (std::string("chat_id_to_u_info.log"));
 
     // path initialization
     std::string path_to_pics{argv[0]};
@@ -152,6 +152,7 @@ int main(int argc, char* argv[]) {
     TgBot::Bot bot(BOT_TOKEN);
 
     // setting up telegram keyboards
+    
     TgBot::InlineKeyboardMarkup::Ptr disciplines_keyboard(new TgBot::InlineKeyboardMarkup);
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row0;
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row1;
@@ -235,25 +236,34 @@ int main(int argc, char* argv[]) {
     tasks_keyboard->inlineKeyboard.push_back(tasks_row0);
 
     // bot "/start" handler
-    bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
+        bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
         const auto chat_id = message->chat->id;
 
         std::stringstream reply;
+        try{   
+            if (CHAT_ID_TO_USER_INFO[chat_id].state < BotState::REGISTERING_NAME) {
+                CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_NAME;
 
-        if (CHAT_ID_TO_USER_INFO[chat_id].state < BotState::REGISTERING_NAME) {
-            CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_NAME;
-
-            reply << "Привет! Скажи имя, под которым ты хочешь, чтобы я тебя "
+                reply << "Привет! Скажи имя, под которым ты хочешь, чтобы я тебя "
                      "зарегистрировал в формате Имя Фамилия, пожалуйста\n";
 
-            bot.getApi().sendMessage(chat_id, reply.str());
-        } else {
+                bot.getApi().sendMessage(chat_id, reply.str());
+            } else {
             reply << "Жду ввода имени...\n";
 
             bot.getApi().sendMessage(chat_id, reply.str());
+            }
         }
-    });
+        catch (const std::runtime_error& re) {
+            std::cerr << "Runtime error: " << re.what() << std::endl;
+            std::cout << "chat_id: " << chat_id << "\n";
+        } catch (const std::exception& ex) {
+        std::cerr << "Error occurred: " << ex.what() << std::endl;
+        }
 
+        });
+    
+    
     // bot additional commands
     bot.getEvents().onCommand("exit", [&bot, &conn](TgBot::Message::Ptr message) {
         const auto chat_id = message->chat->id;
@@ -267,7 +277,7 @@ int main(int argc, char* argv[]) {
               << " условных очков. Этот результат никуда не денется, и будет сохранен в нашей "
                  "базе данных под твоим именем, не волнуйся\n";
 
-        //CHAT_ID_TO_USER_INFO.erase(chat_id);
+        CHAT_ID_TO_USER_INFO.erase(chat_id);
 
         bot.getApi().sendMessage(chat_id, reply.str());
     });
@@ -583,7 +593,7 @@ int main(int argc, char* argv[]) {
             bool is_valid_n;
 
             try {
-                //reply << "перешли в case REGISTERING_SCHOOL\n";
+                
                 school_n = std::stoi(message_text);
 
                 is_valid_n = bot_utils::IsValidSchool(school_n);
@@ -610,10 +620,10 @@ int main(int argc, char* argv[]) {
 
             //   InitTasksStack(&CHAT_ID_TO_USER_INFO[chat_id].tasks_stack, conn);
 
-             //   reply << "Теперь выбери, какие вопросы хочешь решать. Категорию можно "
-             //            "изменить в любой момент, так что не бойся экспериментировать\n";
+            //   reply << "Теперь выбери, какие вопросы хочешь решать. Категорию можно "
+            //            "изменить в любой момент, так что не бойся экспериментировать\n";
 
-                bot.getApi().sendMessage(chat_id, reply.str());// false, 0, disciplines_keyboard);
+                bot.getApi().sendMessage(chat_id, reply.str());
             } else {
                 bot.getApi().sendMessage(chat_id, reply.str());
             }
@@ -803,7 +813,8 @@ int main(int argc, char* argv[]) {
             longPoll.start();
         }
     } catch (const std::runtime_error& re) {
-        std::cerr << "blablalba Runtime error: " << re.what() << std::endl;
+        std::cerr << "Runtime error: " << re.what() << std::endl;
+
     } catch (const std::exception& ex) {
         std::cerr << "Error occurred: " << ex.what() << std::endl;
     }
