@@ -21,8 +21,8 @@
 #include "db_api.h"
 
 #include "parser.h"
-//s#include "lexer.h"
-//#include "instruction.h"
+#include "lexer.h"
+#include "instruction.h"
 
 // ====================
 // TYPES

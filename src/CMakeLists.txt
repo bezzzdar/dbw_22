@@ -24,7 +24,7 @@ add_library(parser SHARED parser.cpp lexer.cpp instruction.cpp parse_operands.cp
 add_executable(bot bot.cpp)
 
 add_custom_command(OUTPUT parse_operands.cpp
-                  COMMAND ${CMAKE_BINARY_DIR}/parse_operands_gen
+                  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/parse_operands_gen
                   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
                   DEPENDS parse_operands_gen)
 
@@ -36,9 +36,10 @@ set(FULL_PATH_TO_MYSQL_CONNECTOR_CPP_DIR /usr/local/include/mysql-connector-cpp)
 include_directories(${FULL_PATH_TO_MYSQL_CONNECTOR_CPP_DIR}/include)
 link_directories(${FULL_PATH_TO_MYSQL_CONNECTOR_CPP_DIR}/lib64)
 
-target_link_libraries(bot db_api parser /usr/local/include/mysql-connector-cpp/libmysqlcppconn8.so mysqlcppconn /usr/local/lib/libTgBot.a ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES} )
+target_link_libraries(bot db_api /usr/local/include/mysql-connector-cpp/libmysqlcppconn8.so mysqlcppconn /usr/local/lib/libTgBot.a ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES} )
 
-target_include_directories(parser PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(example parser)
+target_include_directories(parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # link_directories(/usr/local/lib)
 
