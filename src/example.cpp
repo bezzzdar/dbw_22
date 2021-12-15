@@ -37,7 +37,7 @@ int main() {
   static std::vector<std::string> cases = {
       "ban 100",        "ban, 1 ",        "ban ",        "ban 1 2 ",
       "add_points 100", "add_points, 1 ", "add_points ", "add_points 1 2 ",
-      "add_point 100",  "add_point",      "add_points ", "add_points 1, 2 ",
+      "add_point 100",  "add_points 2, 4",      "add_points ", "add_points 1, 2 ",
       "kek 1, 2, 3"};
 
   for (const auto &s : cases) {
