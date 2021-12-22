@@ -5,7 +5,12 @@
 #include <sstream>
 #include <string>
 
+
 namespace db_api {
+int AllTryCounter = 0;
+int RightAnswerCounter = 0;
+
+
 int Connector::AddUser(const std::string& name, const int school_n, const int grade_n) {
     std::stringstream sql_request;
 
@@ -35,17 +40,15 @@ int Connector::relativeIdToAbsoluteId(const int task, const int grade, const std
 
     sql_request << "SELECT id FROM dialogue2022." << name.c_str() << " WHERE grade_number=" << grade << " LIMIT 1;";
     std::cout << "sql_request from relativeIdToAbsoluteId = " << sql_request.str() << "\n";
-    //запрашиваем id первой строчки, гре grade = grade 
-    //absoluteId = (int)stmt_->execute(sql_request.str().c_str());    
+    
+    //запрашиваем id первой строчки, где grade = grade 
     sql::ResultSet* res_absoluteId = stmt_->executeQuery(sql_request.str().c_str());
     while (res_absoluteId->next()) {
         absoluteId = res_absoluteId->getInt(1);        
     }
     delete(res_absoluteId);
     sql_request.str("");
-    
-    std::cout << "absoluteId from relativeIdToAbsoluteId = " << absoluteId << "\n";
-    std::cout << "task from relativeIdToAbsoluteId = " << task << "\n";
+
     absoluteId = absoluteId+task-1;
 
     return absoluteId;
@@ -83,14 +86,13 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
     
-    int               absoluteId = -1; //= relativeIdToAbsoluteId(n_task, n_grade, discipline_name);
+    int               absoluteId = -1; 
     int               n_grade_db = -1;
     
-    std::cout << "Check answer \n";
-    std::cout << "n_task = " << n_task << "\n";
-    std::cout << "absoluteId = " << absoluteId << "\n";
-    std::cout << "n_grade = " << n_grade << "\n";
-    
+    //increase counter of all answers
+    AllTryCounter++;
+
+    std::cout << "Check answer \n";    
 
     switch (discipline)
     {
@@ -121,10 +123,6 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     while (res_case->next()) {
         is_case_sensitive = res_case->getInt(1);
     }
-
-    std::cout << user_answer << "\n";
-    std::cout << absoluteId << "\n";
-    std::cout << is_case_sensitive << "\n";
     
     sql_request.str("");
     delete (res_case);
@@ -180,6 +178,9 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     for (const auto& token : answers) {
         if (token == ans) {
             std::cout << "correct\n";
+            
+            //increase counter of correct answers
+            RightAnswerCounter++;
 
             return true;
         }
@@ -189,15 +190,21 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     return false;
 }
 
+void Connector::NumberAnswers(int& allAnswers, int& correctAnswers)
+{
+    allAnswers=AllTryCounter;
+    correctAnswers=RightAnswerCounter;
+
+    return;
+}
+
 Task Connector::RequestTask(const Disciplines& discipline, const size_t n_task, const int n_grade) {
    
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
     int               absoluteId = -1; //= relativeIdToAbsoluteId(n_task, n_grade, discipline_name);
     int               n_grade_db = 0;
-    std::cout << "n_task = " << n_task << "\n";
-    std::cout << "absoluteId = " << absoluteId << "\n";
-    std::cout << "n_grade = " << n_grade << "\n";
+   
     switch (discipline)
     {
         case CULT: case GEO: case SOCIAL:
@@ -206,21 +213,7 @@ Task Connector::RequestTask(const Disciplines& discipline, const size_t n_task, 
                     << "task, picture FROM dialogue2022." << discipline_name << " WHERE "
                     << "id=" << n_task << " AND " << "grade_number=" << n_grade_db << ";";
             std::cout << "sql_request = " << sql_request.str() << "\n";    
-            break;
-        
-            // n_grade_db = 0;
-            // sql_request << "SELECT "
-            //         << "task, picture FROM dialogue2022." << discipline_name << " WHERE "
-            //         << "id=" << n_task << " AND " << "grade_number=" << n_grade_db << ";";
-            // std::cout << "sql_request = " << sql_request.str() << "\n";    
-            // break;
-        
-            // n_grade_db = 0;
-            // sql_request << "SELECT "
-            //         << "task, picture FROM dialogue2022." << discipline_name << " WHERE "
-            //         << "id=" << n_task << " AND " << "grade_number=" << n_grade_db << ";";
-            // std::cout << "sql_request = " << sql_request.str() << "\n";    
-            // break;    
+            break;                   
         default:
             if(n_grade <= 9) {
                 n_grade_db=9;
@@ -289,12 +282,19 @@ void Connector::RegisterCorrectAnswer(const int user_id, const Disciplines& disc
     return;
 }
 
-int Connector::RequestNumberTasks(const Disciplines& discipline) {
+int Connector::RequestNumberTasks(const Disciplines& discipline, int grade) {
     std::stringstream sql_request;
     std::string       discipline_name(discipline_to_string.at(discipline));
-
+    int               n_grade_db=0;  
+    if(grade == 0)    {
+        n_grade_db = 0; 
+    } else if (grade >= 6 && grade <= 9) {
+        n_grade_db = 9;                
+    } else {
+        n_grade_db = 10;                
+    } 
     sql_request << "SELECT COUNT("
-                << "id) FROM dialogue2022." << discipline_name;
+                << "id) FROM dialogue2022." << discipline_name << " WHERE grade_number=" << n_grade_db;
 
     sql::ResultSet* res_n_questions = stmt_->executeQuery(sql_request.str().c_str());
 

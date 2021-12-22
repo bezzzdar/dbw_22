@@ -84,9 +84,10 @@ class Connector {
     void RemoveUser(const int user_id);
     bool CheckAnswer(const std::string& user_answer, const Disciplines& discipline,
                      const size_t n_task, const int n_grade);
+    void NumberAnswers(int& allAnswers, int& correctAnswers);
     Task RequestTask(const Disciplines& discipline, const size_t n_task, const int n_grade);
     void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline, const size_t task_id, const int n_grade);
-    int  RequestNumberTasks(const Disciplines& discipline);
+    int  RequestNumberTasks(const Disciplines& discipline, int grade);
 
     int RequestUserScore(const int user_id);
 

@@ -57,8 +57,19 @@ std::string NoSpaces(const std::string& str) {
 bool IsValidName(const std::string& name) {
     const auto string = ToLowerNoSpaces(name);
 
+    int i = 0;
+    for(i = 0; i<(int)string.length();i++)
+    {
+        std::cout <<"try to check digits in name\n";
+
+        if(isdigit(string[i])) {
+            return false;
+        }
+    }
+
     for (const auto& w : bad_words) {
         if (string.find(w) != std::string::npos) {
+            
             return false;
         }
     }
@@ -77,9 +88,14 @@ bool IsValidSchool(const int number) {
 }
 
 bool IsValidGrade(const int number) {
+    if(number <=6 || number > 11) {
+            return false;
+            }
     for (const auto& num : funny_numbers) {
         if (number == num) {
+          
             return false;
+            
         }
     }
 

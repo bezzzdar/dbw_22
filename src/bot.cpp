@@ -1,4 +1,5 @@
 #include <tgbot/tgbot.h>
+#include <tgbot/TgException.h>
 
 #include <algorithm>
 #include <cctype>
@@ -45,6 +46,8 @@ enum BotState {
     CULT_CHOSEN,          // waiting for answer
     MATH_CHOSEN,          // waiting for answer
     SOCIAL_CHOSEN,          // waiting for answer
+    LISTENING_ADMIN,        // waiting for admin command
+    GET_COMMAND,            // get command and parsing/executing it
 };
 
 typedef std::map<db_api::Disciplines, std::list<size_t>> TasksStack;
@@ -63,25 +66,35 @@ struct UserInfo {
     TasksStack tasks_stack;
 };
 
+int AllAnswers = 0;
+int RightAnswers = 0;
+
 // ====================
 // FUNC DECLARATION
 
-void InitTasksStack(TasksStack* stack, db_api::Connector& conn);
+std::stringstream SendNumberOfAnswers(int& AllAnswers, int& RightAnswers, db_api::Connector& conn);
+void InitTasksStack(TasksStack* stack, db_api::Connector& conn, int grade);
 void ReadUserInfo(const std::string& path_to_save);
 void SerializeUserInfo();
 void CalculateResults();
 void SigHandler(int s);
+void Logic(const Ins &i,db_api::Connector& conn);
 
 // ====================
 // GLOBALS
 
-const char*             BOT_TOKEN = "2138233549:AAGSwvfWAAYbP1ORWSqtjopDUOp0ku0a83g";
+const char*             BOT_TOKEN = "2138233549:AAGV6FqaTZtz2QpoemyTPhGlY7Z3SaUREeY";
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
+Parser pars;
+std::pair<Ins, Error> res;
 
 // ====================
 // MAIN
 
 int main(int argc, char* argv[]) {
+
+    //const long chat_id_admin1; 
+
     // back-up data storage
     // on unhandled exception
     std::set_terminate([]() {
@@ -138,7 +151,7 @@ int main(int argc, char* argv[]) {
     path_to_pics = path_to_pics.substr(0, (iter_dir == std::string::npos) ? (0) : (iter_dir + 1));
     path_to_pics += "../../db/";
 
-    std::cout << "path: <" << path_to_pics << ">\n";
+    std::cout << "path to pics: <" << path_to_pics << ">\n";
 
     // CHAT_ID_TO_USER_INFO initialization
     if (!path_to_save.empty()) {
@@ -155,7 +168,7 @@ int main(int argc, char* argv[]) {
 
     TgBot::Bot bot(BOT_TOKEN);
 
-    // setting up telegram keyboards
+    // setting up telegram keyboards    
     
     TgBot::InlineKeyboardMarkup::Ptr disciplines_keyboard(new TgBot::InlineKeyboardMarkup);
     std::vector<TgBot::InlineKeyboardButton::Ptr> disciplines_row0;
@@ -242,8 +255,19 @@ int main(int argc, char* argv[]) {
     // bot "/start" handler
         bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
         const auto chat_id = message->chat->id;
-
+        
         std::stringstream reply;
+        if(chat_id == 194750541)
+        {
+          reply << "Слушаю и повинуюсь, моя госпожа\n";
+          bot.getApi().sendMessage(chat_id, reply.str());          
+          CHAT_ID_TO_USER_INFO[chat_id].state = BotState::LISTENING_ADMIN;
+        }
+        // if (chat_id == 118782290)
+        // {
+        //     reply << "О, Великий!\n";
+        // }
+        
         try{   
             if (CHAT_ID_TO_USER_INFO[chat_id].state < BotState::REGISTERING_NAME) {
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_NAME;
@@ -276,10 +300,10 @@ int main(int argc, char* argv[]) {
 
         //CHAT_ID_TO_USER_INFO.erase(chat_id);
 
-        reply << "Чтож, пока! За свои старания ты получил(а) "
+        reply << "Пока! У тебя правильно решено "
               << conn.RequestUserScore(CHAT_ID_TO_USER_INFO[chat_id].user_id)
-              << " условных очков. Этот результат никуда не денется, и будет сохранен в нашей "
-                 "базе данных под твоим именем, не волнуйся\n";
+              << " заданий. Этот результат будет сохранен в нашей "
+                 "базе данных под твоим именем.\n";
 
         CHAT_ID_TO_USER_INFO.erase(chat_id);
 
@@ -375,8 +399,10 @@ int main(int argc, char* argv[]) {
                         conn.RequestTask(discipline, user_info.tasks_stack[discipline].front(), user_info.grade);
 
                     reply << task.text << '\n';
+                    auto currentTime = std::chrono::system_clock::now();
+                    std::time_t sendTime = std::chrono::system_clock::to_time_t(currentTime);
 
-                    std::cout << "sending text: <" << task.text << ">\n";
+                    std::cout << "sending text: <" << task.text << "> to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
 
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
 
@@ -391,13 +417,13 @@ int main(int argc, char* argv[]) {
                         mime_type += path_to_pic.substr(iter_dir + 1);
 
                         std::cout << "sending photo 1: <" << path_to_pic << "> <" << mime_type
-                                  << ">\n";
+                                  << "> to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
 
                         try {
                             bot.getApi().sendPhoto(
                                 chat_id, TgBot::InputFile::fromFile(path_to_pic, mime_type));
                         } catch (TgBot::TgException& tgex) {
-                            std::cout << "error sending photo:\n";
+                            std::cout << "error sending photo to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
                             std::cout << tgex.what() << std::endl;
 
                             reply.str("");
@@ -408,13 +434,13 @@ int main(int argc, char* argv[]) {
 
                             bot.getApi().sendMessage(chat_id, reply.str());
                         } catch (const std::runtime_error& re) {
-                            std::cout << "runtime error sending photo:\n";
+                            std::cout << "runtime error sending photo to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
                             std::cout << re.what() << std::endl;
 
                             reply.str("");
 
-                            reply << "Если ты видишь это сообщение, костя так и не разобрался с "
-                                     "кодировками и фото не отправилось. Порешай пока другие "
+                            reply << "Если ты видишь это сообщение, значит "
+                                     "фото не отправилось. Порешай пока другие "
                                      "задания и через какое то время попытайся вернуться к этому. "
                                      "Прости(\n";
 
@@ -486,8 +512,11 @@ int main(int argc, char* argv[]) {
                     discipline, CHAT_ID_TO_USER_INFO[chat_id].tasks_stack[discipline].front(), CHAT_ID_TO_USER_INFO[chat_id].grade);
 
                 reply << task.text << '\n';
+                
+                auto currentTime = std::chrono::system_clock::now();
+                std::time_t sendTime = std::chrono::system_clock::to_time_t(currentTime);
 
-                std::cout << "sending text: <" << task.text << ">\n";
+                std::cout << "sending text: <" << task.text << "> to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
 
                 bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
 
@@ -501,13 +530,13 @@ int main(int argc, char* argv[]) {
                     const auto iter_dir = path_to_pic.rfind('.');
                     mime_type += path_to_pic.substr(iter_dir + 1);
 
-                    std::cout << "sending photo 2: <" << path_to_pic << "> <" << mime_type << ">\n";
+                    std::cout << "sending photo 2: <" << path_to_pic << "> <" << mime_type << "> to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
 
                     try {
                         bot.getApi().sendPhoto(chat_id,
                                                TgBot::InputFile::fromFile(path_to_pic, mime_type));
                     } catch (TgBot::TgException& tgex) {
-                        std::cout << "error sending photo:\n";
+                        std::cout << "error sending photo to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
                         std::cout << tgex.what() << std::endl;
 
                         reply.str("");
@@ -523,8 +552,8 @@ int main(int argc, char* argv[]) {
 
                         reply.str("");
 
-                        reply << "Если ты видишь это сообщение, Костя так и не разобрался с "
-                                 "кодировками и фото не отправилось. Порешай пока другие задания и "
+                        reply << "Если ты видишь это сообщение, значит "
+                                 "фото не отправилось. Порешай пока другие задания и "
                                  "через какое-то время попытайся вернуться к этому. Прости(\n";
 
                         bot.getApi().sendMessage(chat_id, reply.str());
@@ -550,6 +579,7 @@ int main(int argc, char* argv[]) {
                                          &path_to_pics](const TgBot::Message::Ptr& message) {
         const auto chat_id = message->chat->id;
         auto       message_text = message->text;
+        std::string command;
 
         auto       user_info = CHAT_ID_TO_USER_INFO[chat_id];
         const auto user_id = user_info.user_id;
@@ -585,7 +615,7 @@ int main(int argc, char* argv[]) {
                 CHAT_ID_TO_USER_INFO[chat_id].name = bot_utils::ToLowerNoSpaces(message_text);
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_SCHOOL;
             } else {
-                reply << "...\nА теперь без шуток, пожалуйста\n";
+                reply << "Пожалуйста, проверь, что всё введено корректно.\n";
             };
 
             bot.getApi().sendMessage(chat_id, reply.str());
@@ -665,7 +695,7 @@ int main(int argc, char* argv[]) {
                 CHAT_ID_TO_USER_INFO[chat_id].user_id = conn.AddUser(user_info.name, user_info.school, grade_n);
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
 
-                InitTasksStack(&CHAT_ID_TO_USER_INFO[chat_id].tasks_stack, conn);
+                InitTasksStack(&CHAT_ID_TO_USER_INFO[chat_id].tasks_stack, conn, grade_n);
 
                 reply << "Теперь выбери, какие вопросы хочешь решать. Категорию можно "
                          "изменить в любой момент, так что не бойся экспериментировать\n";
@@ -713,11 +743,28 @@ int main(int argc, char* argv[]) {
         case SOCIAL_CHOSEN:
             discipline = db_api::Disciplines::SOCIAL;
             break;
+        case LISTENING_ADMIN:
+            reply << "готов воспринимать команды \n";
+            bot.getApi().sendMessage(chat_id, reply.str());
+            CHAT_ID_TO_USER_INFO[chat_id].state = GET_COMMAND;
+        break;
+        case GET_COMMAND:
+            command = std::stoi(message_text);
+            pars.Parse(command);
+            Logic(res.first, conn);
+            if(command == "STATISTICS")
+            {
+                bot.getApi().sendMessage(194750541, reply.str());
+            }
+        break;
         default:
             discipline = db_api::Disciplines::PHY;
             break;
         }
-
+        
+        //parsing command 
+        
+        
         // checking answer
         if (discipline != db_api::Disciplines::NONE) {
             bool ans_is_correct = conn.CheckAnswer(
@@ -778,8 +825,8 @@ int main(int argc, char* argv[]) {
 
                             reply.str("");
 
-                            reply << "Если ты видишь это сообщение, костя так и не разобрался с "
-                                     "кодировками и фото не отправилось. Порешай пока другие "
+                            reply << "Если ты видишь это сообщение, значит "
+                                     "фото не отправилось. Порешай пока другие "
                                      "задания и "
                                      "через какое то время попытайся вернуться к этому. Прости(\n";
 
@@ -806,7 +853,15 @@ int main(int argc, char* argv[]) {
         return;
     });
 
-    std::cout << "Bot username: " << bot.getApi().getMe()->username.c_str() << "\n";
+    try {
+        std::cout << "Bot username: " << bot.getApi().getMe()->username.c_str() << "\n";
+        }
+    catch (const std::runtime_error& re) {
+        std::cerr << "Runtime error: " << re.what() << std::endl;
+
+    } catch (const std::exception& ex) {
+        std::cerr << "Error occurred: " << ex.what() << std::endl;
+    }
 
     TgBot::TgLongPoll longPoll(bot);
 
@@ -823,11 +878,24 @@ int main(int argc, char* argv[]) {
         std::cerr << "Error occurred: " << ex.what() << std::endl;
     }
 
+
+
+
     return 0;
 }
 
 // ====================
 // FUNC IMPLEMENTATION
+
+std::stringstream SendNumberOfAnswers(int& AllAnswers, int& RightAnswers, db_api::Connector& conn)
+{
+    std::stringstream reply;
+    conn.NumberAnswers(AllAnswers, RightAnswers);
+    reply << "ответов всего: " << AllAnswers << ".\n"
+          << "правильных ответов: " << RightAnswers << ".\n";
+    
+    return reply;
+}
 
 void InitDiscipline(std::list<size_t>* tasks, const size_t n_tasks) {
     for (size_t i = 1; i <= n_tasks; i++) {
@@ -837,27 +905,27 @@ void InitDiscipline(std::list<size_t>* tasks, const size_t n_tasks) {
     return;
 }
 
-void InitTasksStack(TasksStack* stack, db_api::Connector& conn) {
+void InitTasksStack(TasksStack* stack, db_api::Connector& conn, int grade) {
     InitDiscipline(&((*stack)[db_api::Disciplines::PHY]),
-                   conn.RequestNumberTasks(db_api::Disciplines::PHY));
+                   conn.RequestNumberTasks(db_api::Disciplines::PHY, grade));
     InitDiscipline(&((*stack)[db_api::Disciplines::MATH]),
-                   conn.RequestNumberTasks(db_api::Disciplines::MATH));
+                   conn.RequestNumberTasks(db_api::Disciplines::MATH, grade));
     InitDiscipline(&((*stack)[db_api::Disciplines::GEO]),
-                   conn.RequestNumberTasks(db_api::Disciplines::GEO));
+                   conn.RequestNumberTasks(db_api::Disciplines::GEO, 0));
     InitDiscipline(&((*stack)[db_api::Disciplines::BIO]),
-                   conn.RequestNumberTasks(db_api::Disciplines::BIO));
+                   conn.RequestNumberTasks(db_api::Disciplines::BIO, grade));
     InitDiscipline(&((*stack)[db_api::Disciplines::COD]),
-                   conn.RequestNumberTasks(db_api::Disciplines::COD));
+                   conn.RequestNumberTasks(db_api::Disciplines::COD, grade));
     InitDiscipline(&((*stack)[db_api::Disciplines::CULT]),
-                   conn.RequestNumberTasks(db_api::Disciplines::CULT));
+                   conn.RequestNumberTasks(db_api::Disciplines::CULT, 0));
     InitDiscipline(&((*stack)[db_api::Disciplines::HIST]),
-                   conn.RequestNumberTasks(db_api::Disciplines::HIST));
+                   conn.RequestNumberTasks(db_api::Disciplines::HIST, grade));
     InitDiscipline(&((*stack)[db_api::Disciplines::CHEM]),
-                   conn.RequestNumberTasks(db_api::Disciplines::CHEM));
+                   conn.RequestNumberTasks(db_api::Disciplines::CHEM, grade));
     InitDiscipline(&((*stack)[db_api::Disciplines::ENG]),
-                   conn.RequestNumberTasks(db_api::Disciplines::ENG));
+                   conn.RequestNumberTasks(db_api::Disciplines::ENG, grade));
     InitDiscipline(&((*stack)[db_api::Disciplines::SOCIAL]),
-                   conn.RequestNumberTasks(db_api::Disciplines::SOCIAL));
+                   conn.RequestNumberTasks(db_api::Disciplines::SOCIAL, 0));
 
     return;
 }
@@ -935,7 +1003,7 @@ void SerializeUserInfo() {
 }
 
 void CalculateResults() {
-    std::cout << "calculationg results...\n";
+    std::cout << "calculating results...\n";
 
     std::map<int, int>                       points_per_school{};
     std::pair<std::vector<std::string>, int> winner{};
@@ -1009,7 +1077,37 @@ void CalculateResults() {
 void SigHandler(int s) {
     printf("Caught signal %d\n", s);
 
-    // SerializeUserInfo();
+    SerializeUserInfo();
 
     exit(1);
+}
+
+void Logic(const Ins &i,db_api::Connector& conn) {
+  switch (i.opcode) {
+  case Ins::Opcode::STATISTICS: {
+         std::stringstream reply=SendNumberOfAnswers(AllAnswers,RightAnswers, conn);         
+  } break;
+  case Ins::Opcode::BAN: {
+    std::cout << "banned debil number " << i.imms[0] << "\n";
+  } break;
+  case Ins::Opcode::PROMOTE: {
+    std::cout << "promoted debil number " << i.imms[0] << "\n";
+  } break;
+  case Ins::Opcode::ADD_POINTS: {
+    std::cout << "added " << i.imms[0] << " points to debil number "
+              << i.imms[1] << "\n";
+  } break;
+  case Ins::Opcode::SUB_POINTS: {
+    std::cout << "taken " << i.imms[0] << " points from debil number "
+              << i.imms[1] << "\n";
+  } break;
+  case Ins::Opcode::KEK: {
+    std::cout << "kek " << i.imms[0] << " " << i.imms[1] << " " << i.imms[2]
+              << "\n";
+  } break;
+  case Ins::Opcode::INVALID:
+  default: {
+    std::cout << "invalid\n";
+  } break;
+  }
 }

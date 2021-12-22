@@ -3,4 +3,5 @@
   _(PROMOTE, "promote", INT)                                                   \
   _(ADD_POINTS, "add_points", INT_INT)                                         \
   _(SUB_POINTS, "sub_points", INT_INT)                                         \
-  _(KEK, "kek", INT_INT_INT)
+  _(KEK, "kek", INT_INT_INT)                                                   \
+  _(STATISTICS, "statistics", INT)
