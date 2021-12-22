@@ -36,6 +36,7 @@ link_directories(${FULL_PATH_TO_MYSQL_CONNECTOR_CPP_DIR}/lib64)
 
 target_link_libraries(bot db_api /usr/local/include/mysql-connector-cpp/libmysqlcppconn8.so mysqlcppconn /usr/local/lib/libTgBot.a ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES} )
 
+target_link_libraries(bot parser)
 target_link_libraries(example parser)
 target_include_directories(parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

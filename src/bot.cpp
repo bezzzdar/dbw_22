@@ -87,6 +87,7 @@ const char*             BOT_TOKEN = "2138233549:AAGV6FqaTZtz2QpoemyTPhGlY7Z3SaUR
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
 Parser pars;
 std::pair<Ins, Error> res;
+std::stringstream replyForCommand;
 
 // ====================
 // MAIN
@@ -287,6 +288,7 @@ int main(int argc, char* argv[]) {
             std::cout << "chat_id: " << chat_id << "\n";
         } catch (const std::exception& ex) {
         std::cerr << "Error occurred: " << ex.what() << std::endl;
+        std::cout << "упало тут chat_id: " << chat_id << "\n";
         }
 
         });
@@ -748,14 +750,11 @@ int main(int argc, char* argv[]) {
             bot.getApi().sendMessage(chat_id, reply.str());
             CHAT_ID_TO_USER_INFO[chat_id].state = GET_COMMAND;
         break;
-        case GET_COMMAND:
-            command = std::stoi(message_text);
-            pars.Parse(command);
+        case GET_COMMAND:   
+            res = pars.Parse(message_text);
             Logic(res.first, conn);
-            if(command == "STATISTICS")
-            {
-                bot.getApi().sendMessage(194750541, reply.str());
-            }
+            bot.getApi().sendMessage(194750541, replyForCommand.str());
+            
         break;
         default:
             discipline = db_api::Disciplines::PHY;
@@ -1085,7 +1084,7 @@ void SigHandler(int s) {
 void Logic(const Ins &i,db_api::Connector& conn) {
   switch (i.opcode) {
   case Ins::Opcode::STATISTICS: {
-         std::stringstream reply=SendNumberOfAnswers(AllAnswers,RightAnswers, conn);         
+         replyForCommand=SendNumberOfAnswers(AllAnswers,RightAnswers, conn);         
   } break;
   case Ins::Opcode::BAN: {
     std::cout << "banned debil number " << i.imms[0] << "\n";
