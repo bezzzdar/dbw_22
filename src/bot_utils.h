@@ -60,10 +60,14 @@ bool IsValidName(const std::string& name) {
     int i = 0;
     for(i = 0; i<(int)string.length();i++)
     {
-        std::cout <<"try to check digits in name\n";
-
-        if(isdigit(string[i])) {
+        if(isdigit(string[i]) )  
+        {
             return false;
+        }
+        
+        if(isalpha(string[i]))
+        {
+            return true;
         }
     }
 

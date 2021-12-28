@@ -326,4 +326,5 @@ int Connector::RequestUserScore(const int user_id) {
     return score;
 }
 
-}; // namespace db_api
+ // namespace db_api
+}

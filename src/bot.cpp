@@ -35,6 +35,7 @@ enum BotState {
     REGISTERING_NAME,     // waiting for name input
     REGISTERING_SCHOOL,   // waiting for school number  
     REGISTERING_GRADE,    // waiting for grade number  
+    WAITING,              // just waiting
     NO_DISCIPLINE_CHOSEN, // waiting for discipline choise
     PHY_CHOSEN,           // waiting for answer
     BIO_CHOSEN,           // waiting for answer
@@ -45,10 +46,10 @@ enum BotState {
     ENG_CHOSEN,           // waiting for answer
     CULT_CHOSEN,          // waiting for answer
     MATH_CHOSEN,          // waiting for answer
-    SOCIAL_CHOSEN,          // waiting for answer
-    LISTENING_ADMIN,        // waiting for admin command
-    GET_COMMAND,            // get command and parsing/executing it
-};
+    SOCIAL_CHOSEN,        // waiting for answer
+    LISTENING_ADMIN,      // waiting for admin command
+    GET_COMMAND,          // get command and parsing/executing it
+ };
 
 typedef std::map<db_api::Disciplines, std::list<size_t>> TasksStack;
 
@@ -57,6 +58,8 @@ struct UserInfo {
     std::string name = "";
     int         school = -1;
     int         grade = -1;
+
+    int category = -1;  // 0 - secondarySchool, 1 - high school
 
     BotState state = NO_STATE;
 
@@ -78,24 +81,37 @@ void ReadUserInfo(const std::string& path_to_save);
 void SerializeUserInfo();
 void CalculateResults();
 void SigHandler(int s);
+
 void Logic(const Ins &i,db_api::Connector& conn);
+
+BotState IntToBotState(int number);
+
+void CreateBackupUserInfo(int category);
+void ReadFromBackupUserInfo(int category);
+void SetStateToUsers(int newState, int category);
 
 // ====================
 // GLOBALS
 
-const char*             BOT_TOKEN = "2138233549:AAGV6FqaTZtz2QpoemyTPhGlY7Z3SaUREeY";
+const char*             BOT_TOKEN = "2138233549:AAEFiJOnzGJ3bLMmpuQEuBMsh3i7t3AmvQQ";
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
+std::map<int, UserInfo> CHAT_ID_TO_USER_INFO_BACKUP{};
 Parser pars;
 std::pair<Ins, Error> res;
 std::stringstream replyForCommand;
+auto currentTime = std::chrono::system_clock::now();
+std::time_t sendTime; // = std::chrono::system_clock::to_time_t(currentTime);
 
 // ====================
 // MAIN
 
+//Prepods chat id
+//<254764569> - Алина
+
 int main(int argc, char* argv[]) {
-
-    //const long chat_id_admin1; 
-
+    currentTime = std::chrono::system_clock::now();
+    sendTime = std::chrono::system_clock::to_time_t(currentTime);
+    
     // back-up data storage
     // on unhandled exception
     std::set_terminate([]() {
@@ -108,7 +124,7 @@ int main(int argc, char* argv[]) {
 
     // on normal termination
     std::atexit([]() {
-        std::cout << "Bot terminated!\n" << std::endl;
+        std::cout << "Bot normally terminated!\n" << std::endl;
 
         SerializeUserInfo();
 
@@ -134,6 +150,7 @@ int main(int argc, char* argv[]) {
     std::cout << std::unitbuf;
 
     // arg parsing
+
     // parameters of the DB
     const std::string hostname(argv[1]);
     const std::string username(argv[2]);
@@ -255,10 +272,12 @@ int main(int argc, char* argv[]) {
 
     // bot "/start" handler
         bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
+        printf("onCommand start\n");
         const auto chat_id = message->chat->id;
         
         std::stringstream reply;
-        if(chat_id == 194750541)
+
+         if(chat_id == 194750541)
         {
           reply << "Слушаю и повинуюсь, моя госпожа\n";
           bot.getApi().sendMessage(chat_id, reply.str());          
@@ -268,27 +287,29 @@ int main(int argc, char* argv[]) {
         // {
         //     reply << "О, Великий!\n";
         // }
-        
+       
         try{   
             if (CHAT_ID_TO_USER_INFO[chat_id].state < BotState::REGISTERING_NAME) {
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_NAME;
 
                 reply << "Привет! Скажи имя, под которым ты хочешь, чтобы я тебя "
                      "зарегистрировал в формате Имя Фамилия, пожалуйста\n";
+                std::cout << "send hi message to user in chat <" << chat_id <<"> \n";     
 
                 bot.getApi().sendMessage(chat_id, reply.str());
             } else {
             reply << "Жду ввода имени...\n";
+            std::cout << "wait to name of user in chat <" << chat_id <<"> \n";
 
             bot.getApi().sendMessage(chat_id, reply.str());
             }
         }
         catch (const std::runtime_error& re) {
             std::cerr << "Runtime error: " << re.what() << std::endl;
-            std::cout << "chat_id: " << chat_id << "\n";
+            std::cout << "Runtime error on starting registration chat_id: " << chat_id << "\n";
         } catch (const std::exception& ex) {
         std::cerr << "Error occurred: " << ex.what() << std::endl;
-        std::cout << "упало тут chat_id: " << chat_id << "\n";
+        std::cout << "Error on statring registration chat_id: " << chat_id << "\n";
         }
 
         });
@@ -306,6 +327,7 @@ int main(int argc, char* argv[]) {
               << conn.RequestUserScore(CHAT_ID_TO_USER_INFO[chat_id].user_id)
               << " заданий. Этот результат будет сохранен в нашей "
                  "базе данных под твоим именем.\n";
+        
 
         CHAT_ID_TO_USER_INFO.erase(chat_id);
 
@@ -401,10 +423,10 @@ int main(int argc, char* argv[]) {
                         conn.RequestTask(discipline, user_info.tasks_stack[discipline].front(), user_info.grade);
 
                     reply << task.text << '\n';
-                    auto currentTime = std::chrono::system_clock::now();
-                    std::time_t sendTime = std::chrono::system_clock::to_time_t(currentTime);
+                    currentTime = std::chrono::system_clock::now();
+                    sendTime = std::chrono::system_clock::to_time_t(currentTime);
 
-                    std::cout << "sending text: <" << task.text << "> to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
+                    std::cout << "At time " << std::ctime(&sendTime) << " sending text: <" << task.text << "> to user " << user_info.name << " at chat <" << chat_id << ">\n";
 
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
 
@@ -418,14 +440,14 @@ int main(int argc, char* argv[]) {
                         const auto iter_dir = path_to_pic.rfind('.');
                         mime_type += path_to_pic.substr(iter_dir + 1);
 
-                        std::cout << "sending photo 1: <" << path_to_pic << "> <" << mime_type
-                                  << "> to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
+                        std::cout << "At time " << std::ctime(&sendTime) << " sending photo 1: <" << path_to_pic << "> <" << mime_type
+                                  << "> to user " << user_info.name << " at chat <" << chat_id << ">\n";
 
                         try {
                             bot.getApi().sendPhoto(
                                 chat_id, TgBot::InputFile::fromFile(path_to_pic, mime_type));
                         } catch (TgBot::TgException& tgex) {
-                            std::cout << "error sending photo to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
+                            std::cout << "At time " << std::ctime(&sendTime) << " error sending photo to user <" << user_info.name << "> at chat <" << chat_id << ">\n";
                             std::cout << tgex.what() << std::endl;
 
                             reply.str("");
@@ -436,7 +458,7 @@ int main(int argc, char* argv[]) {
 
                             bot.getApi().sendMessage(chat_id, reply.str());
                         } catch (const std::runtime_error& re) {
-                            std::cout << "runtime error sending photo to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
+                            std::cout << "At time " << std::ctime(&sendTime) << " runtime error sending photo to user <" << user_info.name << "> at chat <" << chat_id << ">\n";
                             std::cout << re.what() << std::endl;
 
                             reply.str("");
@@ -454,7 +476,7 @@ int main(int argc, char* argv[]) {
 
                     reply << "К сожалению, больше вопросов в этой категории нет, выбери другую, "
                              "пожалуйста\n";
-
+                    std::cout << "At time " << std::ctime(&sendTime) << " send end_of_discipline_message to user <" << user_info.name << "> at chat <" << chat_id << ">\n";
                     bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
                 }
             }
@@ -572,7 +594,7 @@ int main(int argc, char* argv[]) {
 
         return;
     });
-
+    printf("*\n");
     // bot logic on any non-command message
     bot.getEvents().onNonCommandMessage([&bot,
                                          &conn,
@@ -582,12 +604,15 @@ int main(int argc, char* argv[]) {
         const auto chat_id = message->chat->id;
         auto       message_text = message->text;
         std::string command;
+        printf("*обработка NonCommandMessage\n");
 
         auto       user_info = CHAT_ID_TO_USER_INFO[chat_id];
         const auto user_id = user_info.user_id;
 
         std::cout << "user <" << user_info.name << "> in chat " << chat_id << " wrote:\n<"
-                  << message_text << ">\n";
+                  << message_text << "> user state: <" <<user_info.state <<">\n";
+
+        
 
         db_api::Disciplines discipline = db_api::Disciplines::NONE;
 
@@ -599,7 +624,18 @@ int main(int argc, char* argv[]) {
         // via this stete machine
         switch (CHAT_ID_TO_USER_INFO[chat_id].state) {
         case NO_STATE:
-            bot.getApi().sendMessage(chat_id, "Чтобы начать, введи команду /start, пожалуйста\n");
+            
+            try{
+                bot.getApi().sendMessage(chat_id, "Чтобы начать, введи команду /start, пожалуйста\n");
+                std::cout << "send start message to user in chat <" << chat_id << ">\n";
+                }
+            catch (const std::runtime_error& re) {
+            std::cerr << "Runtime error: " << re.what() << std::endl;
+            std::cout << "упало при попытке отправить старт chat_id: " << chat_id << "\n";
+        } catch (const std::exception& ex) {
+        std::cerr << "Error occurred: " << ex.what() << std::endl;
+        std::cout << "упало на старте chat_id: " << chat_id << "\n";
+        }            
             break;
         case REGISTERING_NAME:
             bool is_duplicate;
@@ -608,19 +644,32 @@ int main(int argc, char* argv[]) {
             if (is_duplicate) {
                 reply << "Так вышло, что человека с таким именем уже зарегистрировали. Обратись к "
                          "организаторам, пожалуйста\n";
+                std::cout << "we have duplicate name in chat <" << chat_id << ">\n";         
             } else if (bot_utils::IsValidName(message_text)) {
                 reply << "Привет, " << message_text
                       << "\nТеперь введи номер своей школы. Только цифру, пожалуйста\n"
                          "Если в названии школы не только цифра, организаторы присвоили этой школе "
                          "какой-то номер, спроси у них, какой\n";
-
+                std::cout << "name of user in chat <" << chat_id << ">  is valid\n";
                 CHAT_ID_TO_USER_INFO[chat_id].name = bot_utils::ToLowerNoSpaces(message_text);
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_SCHOOL;
             } else {
                 reply << "Пожалуйста, проверь, что всё введено корректно.\n";
+                std::cout << "name of user in chat <" << chat_id << ">  is not valid\n";
             };
-
-            bot.getApi().sendMessage(chat_id, reply.str());
+            try
+            {
+                bot.getApi().sendMessage(chat_id, reply.str());
+                std::cout << "send reply about name <" << chat_id << ">  is valid or not valid\n";
+            }
+            catch (const std::runtime_error& re) {
+                std::cerr << "Runtime error: " << re.what() << std::endl;
+                std::cout << "fail on reply on registering_name state to chat_id: " << chat_id << "\n";
+            } catch (const std::exception& ex) {
+                std::cerr << "Error occurred: " << ex.what() << std::endl;
+                std::cout << "fail on reply on registering_name state to chat_id: " << chat_id << "\n";
+            }
+            
 
             break;
             
@@ -694,22 +743,31 @@ int main(int argc, char* argv[]) {
                       << "\n";
 
                 CHAT_ID_TO_USER_INFO[chat_id].grade = grade_n;
+                if(grade_n <= 9) CHAT_ID_TO_USER_INFO[chat_id].category=0;
+                else CHAT_ID_TO_USER_INFO[chat_id].category=1;
                 CHAT_ID_TO_USER_INFO[chat_id].user_id = conn.AddUser(user_info.name, user_info.school, grade_n);
-                CHAT_ID_TO_USER_INFO[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
-
+                //CHAT_ID_TO_USER_INFO[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
+                CHAT_ID_TO_USER_INFO[chat_id].state = BotState::WAITING;
                 InitTasksStack(&CHAT_ID_TO_USER_INFO[chat_id].tasks_stack, conn, grade_n);
 
-                reply << "Теперь выбери, какие вопросы хочешь решать. Категорию можно "
-                         "изменить в любой момент, так что не бойся экспериментировать\n";
+                reply << "Теперь ты можешь пообщаться с людьми вокруг и подождать, пока преподы запустят игру\n";
+                //reply << "Теперь выбери, какие вопросы хочешь решать. Категорию можно "
+                //         "изменить в любой момент, так что не бойся экспериментировать\n";
 
-                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+                bot.getApi().sendMessage(chat_id, reply.str());
+
+                //bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
             } else {
                 bot.getApi().sendMessage(chat_id, reply.str());
             }
 
             break;
+        case WAITING:
+            reply << "Пожалуйста, подожди, пока админы начнут игру\n";
+            bot.getApi().sendMessage(chat_id, reply.str());
+            std::cout << "At time " << std::ctime(&sendTime) << " send waiting message to user " << user_info.name << " at chat <" << chat_id << "> " << IntToBotState(user_info.state) << "\n";
 
-
+            break;
         case NO_DISCIPLINE_CHOSEN:
             reply << "Жмякни на кнопку с интересующей тебя категорией, пожалуйста\n";
 
@@ -753,8 +811,7 @@ int main(int argc, char* argv[]) {
         case GET_COMMAND:   
             res = pars.Parse(message_text);
             Logic(res.first, conn);
-            bot.getApi().sendMessage(194750541, replyForCommand.str());
-            
+            bot.getApi().sendMessage(194750541, replyForCommand.str());            
         break;
         default:
             discipline = db_api::Disciplines::PHY;
@@ -885,6 +942,66 @@ int main(int argc, char* argv[]) {
 
 // ====================
 // FUNC IMPLEMENTATION
+
+void SetStateToUsers(int newState, int category)
+{
+    CreateBackupUserInfo(category);
+    for(auto& user : CHAT_ID_TO_USER_INFO)
+    {
+        if(user.second.category == category) user.second.state = (BotState)newState;
+    }
+    return;
+}
+
+void ReturnUserState(int category)
+{
+    ReadFromBackupUserInfo(category);   
+}
+
+BotState IntToBotState(int number)
+{
+    return BotState(number);
+
+}
+
+void SetStateToSecondarySchool(BotState newState)
+{     
+    for(auto & user : CHAT_ID_TO_USER_INFO)
+    {
+        if(user.second.grade <= 9)
+        {
+            user.second.state = newState;
+        }
+    }
+    return;
+}
+
+void CreateBackupUserInfo(int category)
+{
+    for(auto & user : CHAT_ID_TO_USER_INFO)
+    {
+        if (user.second.category==category)
+        {
+            CHAT_ID_TO_USER_INFO_BACKUP[user.first] = CHAT_ID_TO_USER_INFO[user.first];
+            CHAT_ID_TO_USER_INFO_BACKUP[user.second.state]= CHAT_ID_TO_USER_INFO[user.second.state];
+        }
+    }
+    return;
+}
+
+void ReadFromBackupUserInfo(int category)
+{
+    for(auto & user : CHAT_ID_TO_USER_INFO_BACKUP)
+    {
+        if (user.second.category==category)
+        {
+        CHAT_ID_TO_USER_INFO[user.first] = CHAT_ID_TO_USER_INFO_BACKUP[user.first];
+        CHAT_ID_TO_USER_INFO[user.second.state]= CHAT_ID_TO_USER_INFO_BACKUP[user.second.state];
+        }
+    }
+
+    return;
+}
 
 std::stringstream SendNumberOfAnswers(int& AllAnswers, int& RightAnswers, db_api::Connector& conn)
 {
@@ -1084,7 +1201,12 @@ void SigHandler(int s) {
 void Logic(const Ins &i,db_api::Connector& conn) {
   switch (i.opcode) {
   case Ins::Opcode::STATISTICS: {
-         replyForCommand=SendNumberOfAnswers(AllAnswers,RightAnswers, conn);         
+    replyForCommand=SendNumberOfAnswers(AllAnswers,RightAnswers, conn);         
+  } break;
+  case Ins::Opcode::SETSTATE:{
+    replyForCommand.clear();
+    SetStateToUsers(i.imms[0], i.imms[1]);   
+    replyForCommand << "user states changed\n";
   } break;
   case Ins::Opcode::BAN: {
     std::cout << "banned debil number " << i.imms[0] << "\n";

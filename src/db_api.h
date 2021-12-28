@@ -91,6 +91,8 @@ class Connector {
 
     int RequestUserScore(const int user_id);
 
+    
+
   private:
     sql::Driver*     driver_;
     sql::Connection* con_;
