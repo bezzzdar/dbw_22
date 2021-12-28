@@ -93,7 +93,7 @@ void SetStateToUsers(int newState, int category);
 // ====================
 // GLOBALS
 
-const char*             BOT_TOKEN = "2138233549:AAEFiJOnzGJ3bLMmpuQEuBMsh3i7t3AmvQQ";
+const char*             BOT_TOKEN = "";
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO_BACKUP{};
 Parser pars;
