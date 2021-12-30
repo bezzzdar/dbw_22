@@ -31,24 +31,25 @@
 // user's possible states.
 // NOTE: needs it's own state machine to avoid illegal states and allow for clearer state changes
 enum BotState {
-    NO_STATE,             // current user is unknown
-    REGISTERING_NAME,     // waiting for name input
-    REGISTERING_SCHOOL,   // waiting for school number  
-    REGISTERING_GRADE,    // waiting for grade number  
-    WAITING,              // just waiting
-    NO_DISCIPLINE_CHOSEN, // waiting for discipline choise
-    PHY_CHOSEN,           // waiting for answer
-    BIO_CHOSEN,           // waiting for answer
-    GEO_CHOSEN,           // waiting for answer
-    COD_CHOSEN,           // waiting for answer
-    HIST_CHOSEN,          // waiting for answer
-    CHEM_CHOSEN,          // waiting for answer
-    ENG_CHOSEN,           // waiting for answer
-    CULT_CHOSEN,          // waiting for answer
-    MATH_CHOSEN,          // waiting for answer
-    SOCIAL_CHOSEN,        // waiting for answer
-    LISTENING_ADMIN,      // waiting for admin command
-    GET_COMMAND,          // get command and parsing/executing it
+    NO_STATE,             // current user is unknown                 0
+    REGISTERING_NAME,     // waiting for name input                  1
+    REGISTERING_SCHOOL,   // waiting for school number               2 
+    REGISTERING_GRADE,    // waiting for grade number                3
+    WAITING,              // just waiting                            4
+    NO_DISCIPLINE_CHOSEN, // waiting for discipline choise           5
+    PHY_CHOSEN,           // waiting for answer                      6
+    BIO_CHOSEN,           // waiting for answer                      7
+    GEO_CHOSEN,           // waiting for answer                      8
+    COD_CHOSEN,           // waiting for answer                      9
+    HIST_CHOSEN,          // waiting for answer                      10
+    CHEM_CHOSEN,          // waiting for answer                      11
+    ENG_CHOSEN,           // waiting for answer                      12
+    CULT_CHOSEN,          // waiting for answer                      13
+    MATH_CHOSEN,          // waiting for answer                      14
+    SOCIAL_CHOSEN,        // waiting for answer                      15
+    LISTENING_ADMIN,      // waiting for admin command               16
+    GET_COMMAND,          // get command and parsing/executing it    17
+    GO_TO_PREPOD,         // go to prepod and do smth                18
  };
 
 typedef std::map<db_api::Disciplines, std::list<size_t>> TasksStack;
@@ -75,7 +76,7 @@ int RightAnswers = 0;
 // ====================
 // FUNC DECLARATION
 
-std::stringstream SendNumberOfAnswers(int& AllAnswers, int& RightAnswers, db_api::Connector& conn);
+void SendNumberOfAnswers(int& AllAnswers, int& RightAnswers, int category, db_api::Connector& conn);
 void InitTasksStack(TasksStack* stack, db_api::Connector& conn, int grade);
 void ReadUserInfo(const std::string& path_to_save);
 void SerializeUserInfo();
@@ -93,7 +94,7 @@ void SetStateToUsers(int newState, int category);
 // ====================
 // GLOBALS
 
-const char*             BOT_TOKEN = "";
+const char*             BOT_TOKEN = "2138233549:AAEFiJOnzGJ3bLMmpuQEuBMsh3i7t3AmvQQ";
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO_BACKUP{};
 Parser pars;
@@ -279,9 +280,9 @@ int main(int argc, char* argv[]) {
 
          if(chat_id == 194750541)
         {
-          reply << "Слушаю и повинуюсь, моя госпожа\n";
-          bot.getApi().sendMessage(chat_id, reply.str());          
-          CHAT_ID_TO_USER_INFO[chat_id].state = BotState::LISTENING_ADMIN;
+          //reply << "Слушаю и повинуюсь, моя госпожа\n";
+          bot.getApi().sendMessage(chat_id, "reply.str()");          
+          CHAT_ID_TO_USER_INFO[chat_id].state = BotState::GET_COMMAND;
         }
         // if (chat_id == 118782290)
         // {
@@ -739,13 +740,21 @@ int main(int argc, char* argv[]) {
             }
 
             if (is_valid_g) {
+
+                int kindOfSchool=-3;
                 reply << "Здорово, ты успешно зарегистрирован(а) как ученик " << grade_n << " класса школы № " << user_info.school
                       << "\n";
 
                 CHAT_ID_TO_USER_INFO[chat_id].grade = grade_n;
-                if(grade_n <= 9) CHAT_ID_TO_USER_INFO[chat_id].category=0;
-                else CHAT_ID_TO_USER_INFO[chat_id].category=1;
-                CHAT_ID_TO_USER_INFO[chat_id].user_id = conn.AddUser(user_info.name, user_info.school, grade_n);
+                if(grade_n <= 9) {
+                    CHAT_ID_TO_USER_INFO[chat_id].category=0;
+                    kindOfSchool=0;
+                }
+                else {
+                    CHAT_ID_TO_USER_INFO[chat_id].category=1;
+                    kindOfSchool=1;
+                }
+                CHAT_ID_TO_USER_INFO[chat_id].user_id = conn.AddUser(user_info.name, user_info.school, grade_n, kindOfSchool);
                 //CHAT_ID_TO_USER_INFO[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::WAITING;
                 InitTasksStack(&CHAT_ID_TO_USER_INFO[chat_id].tasks_stack, conn, grade_n);
@@ -766,10 +775,9 @@ int main(int argc, char* argv[]) {
             reply << "Пожалуйста, подожди, пока админы начнут игру\n";
             bot.getApi().sendMessage(chat_id, reply.str());
             std::cout << "At time " << std::ctime(&sendTime) << " send waiting message to user " << user_info.name << " at chat <" << chat_id << "> " << IntToBotState(user_info.state) << "\n";
-
             break;
         case NO_DISCIPLINE_CHOSEN:
-            reply << "Жмякни на кнопку с интересующей тебя категорией, пожалуйста\n";
+            reply << "Выбирай интересующую тебя категорию, пожалуйста\n";
 
             bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
             break;
@@ -803,16 +811,16 @@ int main(int argc, char* argv[]) {
         case SOCIAL_CHOSEN:
             discipline = db_api::Disciplines::SOCIAL;
             break;
-        case LISTENING_ADMIN:
-            reply << "готов воспринимать команды \n";
-            bot.getApi().sendMessage(chat_id, reply.str());
-            CHAT_ID_TO_USER_INFO[chat_id].state = GET_COMMAND;
-        break;
         case GET_COMMAND:   
             res = pars.Parse(message_text);
             Logic(res.first, conn);
             bot.getApi().sendMessage(194750541, replyForCommand.str());            
         break;
+        case GO_TO_PREPOD:            
+            reply << "Тебе нужно подойти к преподу и выполнить то, что он скажет\n";
+            bot.getApi().sendMessage(chat_id,reply.str());
+            //CHAT_ID_TO_USER_INFO[chat_id].state = WAITING;
+        break;        
         default:
             discipline = db_api::Disciplines::PHY;
             break;
@@ -958,24 +966,6 @@ void ReturnUserState(int category)
     ReadFromBackupUserInfo(category);   
 }
 
-BotState IntToBotState(int number)
-{
-    return BotState(number);
-
-}
-
-void SetStateToSecondarySchool(BotState newState)
-{     
-    for(auto & user : CHAT_ID_TO_USER_INFO)
-    {
-        if(user.second.grade <= 9)
-        {
-            user.second.state = newState;
-        }
-    }
-    return;
-}
-
 void CreateBackupUserInfo(int category)
 {
     for(auto & user : CHAT_ID_TO_USER_INFO)
@@ -1003,14 +993,12 @@ void ReadFromBackupUserInfo(int category)
     return;
 }
 
-std::stringstream SendNumberOfAnswers(int& AllAnswers, int& RightAnswers, db_api::Connector& conn)
+void SendNumberOfAnswers(int& AllAnswers, int& RightAnswers, int category, db_api::Connector& conn)
 {
-    std::stringstream reply;
-    conn.NumberAnswers(AllAnswers, RightAnswers);
-    reply << "ответов всего: " << AllAnswers << ".\n"
-          << "правильных ответов: " << RightAnswers << ".\n";
     
-    return reply;
+    conn.NumberAnswers(AllAnswers, RightAnswers, category);
+    
+    return;
 }
 
 void InitDiscipline(std::list<size_t>* tasks, const size_t n_tasks) {
@@ -1201,12 +1189,25 @@ void SigHandler(int s) {
 void Logic(const Ins &i,db_api::Connector& conn) {
   switch (i.opcode) {
   case Ins::Opcode::STATISTICS: {
-    replyForCommand=SendNumberOfAnswers(AllAnswers,RightAnswers, conn);         
+    replyForCommand.clear();
+    SendNumberOfAnswers(AllAnswers,RightAnswers, i.imms[0], conn);    
+    replyForCommand << "всего ответов: " << AllAnswers << "\nправильных ответов: " << RightAnswers << "\n";     
   } break;
   case Ins::Opcode::SETSTATE:{
     replyForCommand.clear();
     SetStateToUsers(i.imms[0], i.imms[1]);   
     replyForCommand << "user states changed\n";
+  } break;
+  case Ins::Opcode::PREPOD: {
+    replyForCommand.clear();
+    CreateBackupUserInfo(i.imms[0]);
+    SetStateToUsers(i.imms[1], i.imms[0]);
+    replyForCommand << "user sent to prepod\n";
+  } break;
+  case Ins::Opcode::RETURN: {
+    replyForCommand.clear();
+    ReadFromBackupUserInfo(i.imms[0]);
+    replyForCommand << "Можешь возвращаться решать задачи\n";
   } break;
   case Ins::Opcode::BAN: {
     std::cout << "banned debil number " << i.imms[0] << "\n";

@@ -5,4 +5,6 @@
   _(SUB_POINTS, "sub_points", INT_INT)                                         \
   _(KEK, "kek", INT_INT_INT)                                                   \
   _(STATISTICS, "statistics", INT)                                             \
-  _(SETSTATE, "state", INT_INT)                                            
+  _(SETSTATE, "state", INT_INT)                                                \
+  _(PREPOD, "prepod", INT_INT)                                                 \
+  _(RETURN, "return", INT)

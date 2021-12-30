@@ -7,11 +7,14 @@
 
 
 namespace db_api {
-int AllTryCounter = 0;
-int RightAnswerCounter = 0;
+int AllTryCounterYoung = 0;
+int RightAnswerCounterYoung = 0;
+
+int AllTryCounterElder = 0;
+int RightAnswerCounterElder = 0;
 
 
-int Connector::AddUser(const std::string& name, const int school_n, const int grade_n) {
+int Connector::AddUser(const std::string& name, const int school_n, const int grade_n, const int category) {
     std::stringstream sql_request;
 
     sql_request << "SELECT COUNT(*) FROM dialogue2022.users;";
@@ -25,8 +28,8 @@ int Connector::AddUser(const std::string& name, const int school_n, const int gr
     sql_request.str("");
     delete (res);
 
-    sql_request << "INSERT INTO dialogue2022.users(user_id, user_name, school, grade) VALUES (" << user_id
-                << ", '" << name.c_str() << "', " << school_n << ", " << grade_n << ");";
+    sql_request << "INSERT INTO dialogue2022.users(user_id, user_name, school, grade, category) VALUES (" << user_id
+                << ", '" << name.c_str() << "', " << school_n << ", " << grade_n << ", " << category << ");";
                 
     stmt_->execute(sql_request.str().c_str());
 
@@ -90,7 +93,8 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     int               n_grade_db = -1;
     
     //increase counter of all answers
-    AllTryCounter++;
+    AllTryCounterYoung++;
+    AllTryCounterElder++;
 
     std::cout << "Check answer \n";    
 
@@ -180,7 +184,9 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
             std::cout << "correct\n";
             
             //increase counter of correct answers
-            RightAnswerCounter++;
+        if(n_grade<=9) {
+            RightAnswerCounterYoung++;
+            } else RightAnswerCounterElder ++;
 
             return true;
         }
@@ -190,10 +196,16 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     return false;
 }
 
-void Connector::NumberAnswers(int& allAnswers, int& correctAnswers)
+void Connector::NumberAnswers(int& allAnswers, int& correctAnswers, int category)
 {
-    allAnswers=AllTryCounter;
-    correctAnswers=RightAnswerCounter;
+    if(category==0) {
+        allAnswers=AllTryCounterYoung;
+        correctAnswers=RightAnswerCounterYoung;
+    }
+    else {
+         allAnswers=AllTryCounterElder;
+        correctAnswers=RightAnswerCounterElder;
+    }
 
     return;
 }

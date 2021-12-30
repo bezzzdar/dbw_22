@@ -6,6 +6,7 @@ CREATE TABLE users (
     user_name VARCHAR(50),
     school integer,
     grade integer,
+    category integer,
     score INTEGER default 0,
     number_math INTEGER default 1,    
     number_cod INTEGER default 1,

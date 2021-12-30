@@ -79,12 +79,12 @@ class Connector {
     }
     int relativeIdToAbsoluteId(const int task, const int grade, const std::string& name);
     
-    int  AddUser(const std::string& name, const int school_n, const int grade_n);
+    int  AddUser(const std::string& name, const int school_n, const int grade_n, const int category);
     bool UsernameTaken(const std::string& name);
     void RemoveUser(const int user_id);
     bool CheckAnswer(const std::string& user_answer, const Disciplines& discipline,
                      const size_t n_task, const int n_grade);
-    void NumberAnswers(int& allAnswers, int& correctAnswers);
+    void NumberAnswers(int& allAnswers, int& correctAnswers, int category);
     Task RequestTask(const Disciplines& discipline, const size_t n_task, const int n_grade);
     void RegisterCorrectAnswer(const int user_id, const Disciplines& discipline, const size_t task_id, const int n_grade);
     int  RequestNumberTasks(const Disciplines& discipline, int grade);
