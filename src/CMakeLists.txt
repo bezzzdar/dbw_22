@@ -31,6 +31,8 @@ add_custom_command(OUTPUT parse_operands.cpp
 # add_dependencies(parser parse_operands.cpp)
 
 set(FULL_PATH_TO_MYSQL_CONNECTOR_CPP_DIR /usr/local/include/mysql-connector-cpp)
+
+
 include_directories(${FULL_PATH_TO_MYSQL_CONNECTOR_CPP_DIR}/include)
 link_directories(${FULL_PATH_TO_MYSQL_CONNECTOR_CPP_DIR}/lib64)
 

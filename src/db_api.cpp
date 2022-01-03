@@ -93,8 +93,8 @@ bool Connector::CheckAnswer(const std::string& user_answer, const Disciplines& d
     int               n_grade_db = -1;
     
     //increase counter of all answers
-    AllTryCounterYoung++;
-    AllTryCounterElder++;
+    if(n_grade<=9) AllTryCounterYoung++;
+    else AllTryCounterElder++;
 
     std::cout << "Check answer \n";    
 
@@ -337,6 +337,25 @@ int Connector::RequestUserScore(const int user_id) {
 
     return score;
 }
+
+// std::vector<std::pair<std::string,int>> Connector::GetUsersWithScore()
+// {
+//     std::vector<std::pair<std::string,int>> resultsFromDatabase{};
+//     std::stringstream sql_request;
+//     sql_request << "SELECT user_name, score FROM dialogue.2022 users;";
+
+//     sql::ResultSet* res_scope = stmt_->executeQuery(sql_request.str().c_str());
+//     for( auto user : resultsFromDatabase)
+//     {
+//      user.first=res_scope->getString(1);
+//      user.second=res_scope->getInt(2);
+//      resultsFromDatabase.push_back(user);
+//     }
+
+
+//     return resultsFromDatabase;
+
+// }
 
  // namespace db_api
 }

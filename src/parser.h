@@ -8,6 +8,7 @@
 #include <cassert>
 #include <string>
 #include <utility>
+#include <iostream>
 
 class Parser {
 public:
@@ -15,6 +16,11 @@ public:
   ~Parser() = default;
 
   std::pair<Ins, Error> Parse(const std::vector<Token> &t) {
+    std::cout << t[0].whole_line <<"\n";
+    for(auto token : t)
+    {
+      std::cout << token.bound_l << " " << token.bound_r << "\n";
+    }
     tokens = {};
     op = Token::Type::ID_BAD;
     pos = 0;

@@ -1,5 +1,7 @@
 #include "parser.h"
 
+#include <iostream>
+
 static Ins::Opcode TokenToOpcode(Token::Type id) {
   assert(id > Token::Type::OPERATION && id < Token::Type::COUNT_TYPES);
 
@@ -61,6 +63,7 @@ bool Parser::ParseOperandINT() {
 
   const std::string p = tokens[pos].whole_line.substr(
       tokens[pos].bound_l, tokens[pos].bound_r - tokens[pos].bound_l);
+      std::cout << "p= " << p << "\n";
 
   int64_t n = 0;
 
@@ -78,6 +81,7 @@ bool Parser::ParseOperandINT() {
   } else {
     n = strtoull(p.data(), nullptr, 10);
   }
+  std::cout << "n= " << n << "\n";
 
   ins.imms.push_back(n);
 

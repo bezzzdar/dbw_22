@@ -50,6 +50,7 @@ enum BotState {
     LISTENING_ADMIN,      // waiting for admin command               16
     GET_COMMAND,          // get command and parsing/executing it    17
     GO_TO_PREPOD,         // go to prepod and do smth                18
+    RETURN_FROM_PREPOD,   // back to normal life                     19
  };
 
 typedef std::map<db_api::Disciplines, std::list<size_t>> TasksStack;
@@ -85,8 +86,6 @@ void SigHandler(int s);
 
 void Logic(const Ins &i,db_api::Connector& conn);
 
-BotState IntToBotState(int number);
-
 void CreateBackupUserInfo(int category);
 void ReadFromBackupUserInfo(int category);
 void SetStateToUsers(int newState, int category);
@@ -94,7 +93,7 @@ void SetStateToUsers(int newState, int category);
 // ====================
 // GLOBALS
 
-const char*             BOT_TOKEN = "2138233549:AAEFiJOnzGJ3bLMmpuQEuBMsh3i7t3AmvQQ";
+const char*             BOT_TOKEN = "5046939042:AAF7Ve0olCCgOkg3_D_He6_e-EEwVWHgQ9o";
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO{};
 std::map<int, UserInfo> CHAT_ID_TO_USER_INFO_BACKUP{};
 Parser pars;
@@ -102,6 +101,8 @@ std::pair<Ins, Error> res;
 std::stringstream replyForCommand;
 auto currentTime = std::chrono::system_clock::now();
 std::time_t sendTime; // = std::chrono::system_clock::to_time_t(currentTime);
+
+std::pair<int, std::stringstream> CHAT_ID_TO_PREPOD_NAME{}; 
 
 // ====================
 // MAIN
@@ -112,7 +113,19 @@ std::time_t sendTime; // = std::chrono::system_clock::to_time_t(currentTime);
 int main(int argc, char* argv[]) {
     currentTime = std::chrono::system_clock::now();
     sendTime = std::chrono::system_clock::to_time_t(currentTime);
-    
+    // CHAT_ID_TO_PREPOD_NAME = {
+    //     {19376252, "Чай"},
+    //     {37834417, "Лиза"},
+    //     {46969640, "Гриша"},
+    //     {118782290, "Стефан"},
+    //     {172345869, "Никита"},
+    //     {254764569, "Алина"},
+    //     {344822137, "КатяЮрьна"},
+    //     {397762556, "ПетяСергеич"},
+    //     {606632215, "Рита"},
+    //     {967783190, "Нюся"}
+    // }
+
     // back-up data storage
     // on unhandled exception
     std::set_terminate([]() {
@@ -278,28 +291,36 @@ int main(int argc, char* argv[]) {
         
         std::stringstream reply;
 
-         if(chat_id == 194750541)
-        {
-          //reply << "Слушаю и повинуюсь, моя госпожа\n";
-          bot.getApi().sendMessage(chat_id, "reply.str()");          
-          CHAT_ID_TO_USER_INFO[chat_id].state = BotState::GET_COMMAND;
-        }
+        // if(chat_id == 194750541)
+        // {
+        //     try {
+        //         bot.getApi().sendMessage(chat_id, "get_command");          
+        //         CHAT_ID_TO_USER_INFO[chat_id].state = BotState::GET_COMMAND;
+        //     }
+        //     catch (const std::runtime_error& re) {
+        //         std::cerr << "Runtime error: " << re.what() << std::endl;
+        //         std::cout << "Runtime error on starting registration chat_id: " << chat_id << "\n";
+        //     } 
+        //     catch (const std::exception& ex) {
+        //     std::cerr << "Error occurred: " << ex.what() << std::endl;
+        //     std::cout << "Error on statring registration chat_id: " << chat_id << "\n";
+        //     }
+        // }
         // if (chat_id == 118782290)
         // {
-        //     reply << "О, Великий!\n";
+        //     CHAT_ID_TO_USER_INFO[chat_id].state = BotState::GET_COMMAND;
         // }
        
         try{   
             if (CHAT_ID_TO_USER_INFO[chat_id].state < BotState::REGISTERING_NAME) {
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_NAME;
 
-                reply << "Привет! Скажи имя, под которым ты хочешь, чтобы я тебя "
-                     "зарегистрировал в формате Имя Фамилия, пожалуйста\n";
+                reply << "Привет! Напиши, пожалуйста, мне свои Имя и Фамилию, чтобы я тебя зарегистрировал\n";
                 std::cout << "send hi message to user in chat <" << chat_id <<"> \n";     
 
                 bot.getApi().sendMessage(chat_id, reply.str());
             } else {
-            reply << "Жду ввода имени...\n";
+            reply << "Жду...\n";
             std::cout << "wait to name of user in chat <" << chat_id <<"> \n";
 
             bot.getApi().sendMessage(chat_id, reply.str());
@@ -331,8 +352,16 @@ int main(int argc, char* argv[]) {
         
 
         CHAT_ID_TO_USER_INFO.erase(chat_id);
-
-        bot.getApi().sendMessage(chat_id, reply.str());
+        try {
+            bot.getApi().sendMessage(chat_id, reply.str());
+        }
+        catch (const std::runtime_error& re) {
+            std::cerr << "Runtime error: " << re.what() << std::endl;
+            std::cout << "Runtime error on exit command chat_id: " << chat_id << "\n";
+        } catch (const std::exception& ex) {
+        std::cerr << "Error occurred: " << ex.what() << std::endl;
+        std::cout << "Error on exit command chat_id: " << chat_id << "\n";
+        }
     });
 
     // bot logic on user button input
@@ -428,8 +457,16 @@ int main(int argc, char* argv[]) {
                     sendTime = std::chrono::system_clock::to_time_t(currentTime);
 
                     std::cout << "At time " << std::ctime(&sendTime) << " sending text: <" << task.text << "> to user " << user_info.name << " at chat <" << chat_id << ">\n";
-
-                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+                    try {
+                        bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+                    }
+                    catch (const std::runtime_error& re) {
+                        std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                        std::cout << "At time " << std::ctime(&sendTime) << "Runtime error on sending task chat_id: " << chat_id << "\n";
+                    } catch (const std::exception& ex) {
+                        std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                        std::cout << "At time " << std::ctime(&sendTime) << "Error on sending task chat_id: " << chat_id << "\n";
+                    }
 
                     if (!task.pic_name.empty()) {
                         std::string path_to_pic = path_to_pics +
@@ -454,10 +491,19 @@ int main(int argc, char* argv[]) {
                             reply.str("");
 
                             reply << "Извини, произошла ошибка при отправке фото к этому заданию. "
-                                     "Порешай пока другие и через какое то время попытайся "
+                                     "Порешай пока другие и через какое-то время попытайся "
                                      "вернуться к этому. Прости(\n";
 
-                            bot.getApi().sendMessage(chat_id, reply.str());
+                            try { 
+                                bot.getApi().sendMessage(chat_id, reply.str()); 
+                            }
+                            catch (const std::runtime_error& re) {
+                                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                                std::cout << "At time " << std::ctime(&sendTime) << "Runtime error on sending photo to chat_id: " << chat_id << "\n";
+                            } catch (const std::exception& ex) {
+                                std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                                std::cout << "At time " << std::ctime(&sendTime) << "Error on sending photo to chat_id: " << chat_id << "\n";       
+                            }
                         } catch (const std::runtime_error& re) {
                             std::cout << "At time " << std::ctime(&sendTime) << " runtime error sending photo to user <" << user_info.name << "> at chat <" << chat_id << ">\n";
                             std::cout << re.what() << std::endl;
@@ -469,7 +515,17 @@ int main(int argc, char* argv[]) {
                                      "задания и через какое то время попытайся вернуться к этому. "
                                      "Прости(\n";
 
-                            bot.getApi().sendMessage(chat_id, reply.str());
+                            try {
+                                bot.getApi().sendMessage(chat_id, reply.str());
+                            }
+                            catch (const std::runtime_error& re) {
+                                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                                std::cout << "At time " << std::ctime(&sendTime) << "Runtime error on sending photo to chat_id: " << chat_id << "\n";
+                            } catch (const std::exception& ex) {
+                                std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                                std::cout << "At time " << std::ctime(&sendTime) << "Error on sending photo to chat_id: " << chat_id << "\n";       
+                            }
+                            
                         }
                     }
                 } else {
@@ -478,7 +534,16 @@ int main(int argc, char* argv[]) {
                     reply << "К сожалению, больше вопросов в этой категории нет, выбери другую, "
                              "пожалуйста\n";
                     std::cout << "At time " << std::ctime(&sendTime) << " send end_of_discipline_message to user <" << user_info.name << "> at chat <" << chat_id << ">\n";
-                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+                    try {
+                        bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+                    }
+                    catch (const std::runtime_error& re) {
+                        std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                        std::cout << "At time " << std::ctime(&sendTime) << "Runtime error on sending end_of_discipline_message to chat_id: " << chat_id << "\n";
+                    } catch (const std::exception& ex) {
+                        std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                        std::cout << "At time " << std::ctime(&sendTime) << "Error on sending end_of_discipline_message to chat_id: " << chat_id << "\n";       
+                    }
                 }
             }
         }
@@ -543,7 +608,18 @@ int main(int argc, char* argv[]) {
 
                 std::cout << "sending text: <" << task.text << "> to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
 
-                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+                try {
+                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+                }
+                catch (const std::runtime_error& re) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "Runtime error on sending next question to chat_id: " << chat_id << "\n";
+                } catch (const std::exception& ex) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "Error on sending next question to chat_id: " << chat_id << "\n";       
+                }
+                
+
 
                 if (!task.pic_name.empty()) {
                     std::string path_to_pic = path_to_pics +
@@ -555,14 +631,14 @@ int main(int argc, char* argv[]) {
                     const auto iter_dir = path_to_pic.rfind('.');
                     mime_type += path_to_pic.substr(iter_dir + 1);
 
-                    std::cout << "sending photo 2: <" << path_to_pic << "> <" << mime_type << "> to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
+                    std::cout << "At time " << std::ctime(&sendTime) << "sending photo 2: <" << path_to_pic << "> <" << mime_type << "> to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
 
                     try {
                         bot.getApi().sendPhoto(chat_id,
                                                TgBot::InputFile::fromFile(path_to_pic, mime_type));
                     } catch (TgBot::TgException& tgex) {
-                        std::cout << "error sending photo to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
-                        std::cout << tgex.what() << std::endl;
+                        std::cout << "At time " << std::ctime(&sendTime) << "error sending photo to user " << user_info.name << " at time " << std::ctime(&sendTime) <<"\n";
+                        std::cout << "At time " << std::ctime(&sendTime) << tgex.what() << std::endl;
 
                         reply.str("");
 
@@ -572,7 +648,7 @@ int main(int argc, char* argv[]) {
 
                         bot.getApi().sendMessage(chat_id, reply.str());
                     } catch (const std::runtime_error& re) {
-                        std::cout << "runtime error sending photo:\n";
+                        std::cout << "At time " << std::ctime(&sendTime) << "runtime error sending photo:\n";
                         std::cout << re.what() << std::endl;
 
                         reply.str("");
@@ -581,7 +657,16 @@ int main(int argc, char* argv[]) {
                                  "фото не отправилось. Порешай пока другие задания и "
                                  "через какое-то время попытайся вернуться к этому. Прости(\n";
 
-                        bot.getApi().sendMessage(chat_id, reply.str());
+                        try {
+                            bot.getApi().sendMessage(chat_id, reply.str());
+                        }
+                        catch (const std::runtime_error& re) {
+                            std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                            std::cout << "At time " << std::ctime(&sendTime) << "Runtime error on sending next picture to chat_id: " << chat_id << "\n";
+                        } catch (const std::exception& ex) {
+                            std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                            std::cout << "At time " << std::ctime(&sendTime) << "Error on sending next picture to chat_id: " << chat_id << "\n";       
+                        }
                     }
                 }
             } else if (StringTools::startsWith(query_data, "choose_button")) {
@@ -589,7 +674,17 @@ int main(int argc, char* argv[]) {
 
                 reply << "Хорошо, вот темы на выбор:\n";
 
-                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+                try {
+                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+                }
+                catch (const std::runtime_error& re) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "Runtime error on sending discipline keyboard to chat_id: " << chat_id << "\n";
+                } catch (const std::exception& ex) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "Error on sending discipline keyboard to chat_id: " << chat_id << "\n";       
+                }
+
             }
         }
 
@@ -610,10 +705,8 @@ int main(int argc, char* argv[]) {
         auto       user_info = CHAT_ID_TO_USER_INFO[chat_id];
         const auto user_id = user_info.user_id;
 
-        std::cout << "user <" << user_info.name << "> in chat " << chat_id << " wrote:\n<"
-                  << message_text << "> user state: <" <<user_info.state <<">\n";
-
-        
+        std::cout << "At time " << std::ctime(&sendTime) << "user <" << user_info.name << "> in chat " << chat_id << " wrote:\n<"
+                  << message_text << "> user state: <" <<user_info.state <<">\n";        
 
         db_api::Disciplines discipline = db_api::Disciplines::NONE;
 
@@ -625,18 +718,17 @@ int main(int argc, char* argv[]) {
         // via this stete machine
         switch (CHAT_ID_TO_USER_INFO[chat_id].state) {
         case NO_STATE:
-            
             try{
                 bot.getApi().sendMessage(chat_id, "Чтобы начать, введи команду /start, пожалуйста\n");
                 std::cout << "send start message to user in chat <" << chat_id << ">\n";
-                }
+            }
             catch (const std::runtime_error& re) {
-            std::cerr << "Runtime error: " << re.what() << std::endl;
-            std::cout << "упало при попытке отправить старт chat_id: " << chat_id << "\n";
-        } catch (const std::exception& ex) {
-        std::cerr << "Error occurred: " << ex.what() << std::endl;
-        std::cout << "упало на старте chat_id: " << chat_id << "\n";
-        }            
+                std::cerr << "Runtime error: " << re.what() << std::endl;
+                std::cout << "упало при попытке отправить старт chat_id: " << chat_id << "\n";
+            } catch (const std::exception& ex) {
+                std::cerr << "Error occurred: " << ex.what() << std::endl;
+                std::cout << "упало на старте chat_id: " << chat_id << "\n";
+            }            
             break;
         case REGISTERING_NAME:
             bool is_duplicate;
@@ -645,30 +737,32 @@ int main(int argc, char* argv[]) {
             if (is_duplicate) {
                 reply << "Так вышло, что человека с таким именем уже зарегистрировали. Обратись к "
                          "организаторам, пожалуйста\n";
-                std::cout << "we have duplicate name in chat <" << chat_id << ">\n";         
+                std::cout << "At time " << std::ctime(&sendTime) << "duplicate name in chat <" << chat_id << ">\n";         
             } else if (bot_utils::IsValidName(message_text)) {
                 reply << "Привет, " << message_text
                       << "\nТеперь введи номер своей школы. Только цифру, пожалуйста\n"
                          "Если в названии школы не только цифра, организаторы присвоили этой школе "
                          "какой-то номер, спроси у них, какой\n";
-                std::cout << "name of user in chat <" << chat_id << ">  is valid\n";
+                         //Кадышевского = 20
+                         //Лицей Дубна = 30
+                std::cout << "At time " << std::ctime(&sendTime) << "name of user in chat <" << chat_id << ">  is valid\n";
                 CHAT_ID_TO_USER_INFO[chat_id].name = bot_utils::ToLowerNoSpaces(message_text);
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_SCHOOL;
             } else {
                 reply << "Пожалуйста, проверь, что всё введено корректно.\n";
-                std::cout << "name of user in chat <" << chat_id << ">  is not valid\n";
+                std::cout << "At time " << std::ctime(&sendTime) << "name of user in chat <" << chat_id << ">  is not valid\n";
             };
             try
             {
                 bot.getApi().sendMessage(chat_id, reply.str());
-                std::cout << "send reply about name <" << chat_id << ">  is valid or not valid\n";
+                std::cout << "At time " << std::ctime(&sendTime) << "send reply about name to chat <" << chat_id << ">\n";
             }
             catch (const std::runtime_error& re) {
                 std::cerr << "Runtime error: " << re.what() << std::endl;
-                std::cout << "fail on reply on registering_name state to chat_id: " << chat_id << "\n";
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on registering_name state to chat_id: " << chat_id << "\n";
             } catch (const std::exception& ex) {
                 std::cerr << "Error occurred: " << ex.what() << std::endl;
-                std::cout << "fail on reply on registering_name state to chat_id: " << chat_id << "\n";
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on registering_name state to chat_id: " << chat_id << "\n";
             }
             
 
@@ -678,38 +772,34 @@ int main(int argc, char* argv[]) {
             int  school_n;
             bool is_valid_n;
 
-            try {
-                
+            try {                
                 school_n = std::stoi(message_text);
-
                 is_valid_n = bot_utils::IsValidSchool(school_n);
-
                 if (!is_valid_n) {
                     reply << "Уверен, школы с таким номером нет\n";
                 }
             } catch (const std::invalid_argument& inv_arg) {
                 reply << "Пожалуйста, введи только номер школы. Только цифры\n";
-
                 is_valid_n = false;
             } catch (const std::out_of_range& oor) {
                 reply << "Столько школ во всем мире не наберется\n";
-
                 is_valid_n = false;
             }
-
             if (is_valid_n) {
                 reply << "Здорово, теперь введи номер своего класса. Только цифру, пожалуйста.\n ";
 
                 CHAT_ID_TO_USER_INFO[chat_id].school = school_n;
-            //  CHAT_ID_TO_USER_INFO[chat_id].user_id = conn.AddUser(user_info.name, school_n);
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::REGISTERING_GRADE;
-
-            //   InitTasksStack(&CHAT_ID_TO_USER_INFO[chat_id].tasks_stack, conn);
-
-            //   reply << "Теперь выбери, какие вопросы хочешь решать. Категорию можно "
-            //            "изменить в любой момент, так что не бойся экспериментировать\n";
-
-                bot.getApi().sendMessage(chat_id, reply.str());
+                try {
+                    bot.getApi().sendMessage(chat_id, reply.str());
+                }
+                catch (const std::runtime_error& re) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on registering_school state to chat_id: " << chat_id << "\n";
+                } catch (const std::exception& ex) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on registering_school state to chat_id: " << chat_id << "\n";
+                }
             } else {
                 bot.getApi().sendMessage(chat_id, reply.str());
             }
@@ -719,32 +809,25 @@ int main(int argc, char* argv[]) {
             int grade_n;
             bool is_valid_g;
             
-            try {
-            
+            try {            
                 grade_n = std::stoi(message_text);
-
                 is_valid_g = bot_utils::IsValidGrade(grade_n);
-
+//если шестой класс - то присылать что-нибудь другое
                 if (!is_valid_g) {
                     reply << "Уверен, класса с таким номером нет\n";
                 }
             } catch (const std::invalid_argument& inv_arg) {
                 reply << "Пожалуйста, введи только номер класса. Только цифры\n";
-
                 is_valid_g = false;
             }
             catch (const std::out_of_range& oor) {
                 reply << "Столько классов в школе не бывает\n";
-
                 is_valid_g = false;
             }
-
             if (is_valid_g) {
-
                 int kindOfSchool=-3;
                 reply << "Здорово, ты успешно зарегистрирован(а) как ученик " << grade_n << " класса школы № " << user_info.school
                       << "\n";
-
                 CHAT_ID_TO_USER_INFO[chat_id].grade = grade_n;
                 if(grade_n <= 9) {
                     CHAT_ID_TO_USER_INFO[chat_id].category=0;
@@ -755,31 +838,61 @@ int main(int argc, char* argv[]) {
                     kindOfSchool=1;
                 }
                 CHAT_ID_TO_USER_INFO[chat_id].user_id = conn.AddUser(user_info.name, user_info.school, grade_n, kindOfSchool);
-                //CHAT_ID_TO_USER_INFO[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
                 CHAT_ID_TO_USER_INFO[chat_id].state = BotState::WAITING;
                 InitTasksStack(&CHAT_ID_TO_USER_INFO[chat_id].tasks_stack, conn, grade_n);
-
                 reply << "Теперь ты можешь пообщаться с людьми вокруг и подождать, пока преподы запустят игру\n";
-                //reply << "Теперь выбери, какие вопросы хочешь решать. Категорию можно "
-                //         "изменить в любой момент, так что не бойся экспериментировать\n";
+                try {
+                    bot.getApi().sendMessage(chat_id, reply.str());
+                }
+                catch (const std::runtime_error& re) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on registering_grade state to chat_id: " << chat_id << "\n";
+                } catch (const std::exception& ex) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on registering_grade state to chat_id: " << chat_id << "\n";
+                }
 
-                bot.getApi().sendMessage(chat_id, reply.str());
 
-                //bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
             } else {
-                bot.getApi().sendMessage(chat_id, reply.str());
+                try {
+                    bot.getApi().sendMessage(chat_id, reply.str());
+                }
+                catch (const std::runtime_error& re) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on registering_grade state to chat_id: " << chat_id << "\n";
+                } catch (const std::exception& ex) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on registering_grade state to chat_id: " << chat_id << "\n";
+                }
             }
 
             break;
         case WAITING:
-            reply << "Пожалуйста, подожди, пока админы начнут игру\n";
-            bot.getApi().sendMessage(chat_id, reply.str());
-            std::cout << "At time " << std::ctime(&sendTime) << " send waiting message to user " << user_info.name << " at chat <" << chat_id << "> " << IntToBotState(user_info.state) << "\n";
+            reply << "Пожалуйста, подожди, пока преподы запустят игру\n";
+            try {
+                bot.getApi().sendMessage(chat_id, reply.str());
+            }
+            catch (const std::runtime_error& re) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on waiting state to chat_id: " << chat_id << "\n";
+            } catch (const std::exception& ex) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on waiting state to chat_id: " << chat_id << "\n";
+            }
+            std::cout << "At time " << std::ctime(&sendTime) << " send waiting message to user " << user_info.name << " at chat <" << chat_id << "> " << user_info.state << "\n";
             break;
         case NO_DISCIPLINE_CHOSEN:
             reply << "Выбирай интересующую тебя категорию, пожалуйста\n";
-
-            bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+            try {
+                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+            }
+            catch (const std::runtime_error& re) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on keyboard sending to chat_id: " << chat_id << "\n";
+            } catch (const std::exception& ex) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on reply on waiting state to chat_id: " << chat_id << "\n";
+            }
             break;
         case PHY_CHOSEN:
             discipline = db_api::Disciplines::PHY;
@@ -813,14 +926,63 @@ int main(int argc, char* argv[]) {
             break;
         case GET_COMMAND:   
             res = pars.Parse(message_text);
+            
+            if (res.second.err != Error::ErrorType::NONE) {
+                std::stringstream error;
+                std::cout << res.second.message << "\n";
+                error << "ошибка в команде: " << res.second.message << "\n";
+                try {
+                    bot.getApi().sendMessage(194750541, error.str());            
+                }
+                catch (const std::runtime_error& re) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "fail sending command error text to 194750541\n";
+                } catch (const std::exception& ex) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "fail sending command error text to 194750541\n";
+                }
+                break;
+            }
             Logic(res.first, conn);
-            bot.getApi().sendMessage(194750541, replyForCommand.str());            
+            try {
+                bot.getApi().sendMessage(194750541, replyForCommand.str());            
+            }
+            catch (const std::runtime_error& re) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail sending command reply to 194750541\n";
+            } catch (const std::exception& ex) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail sending command reply to 194750541\n";
+            }
         break;
         case GO_TO_PREPOD:            
-            reply << "Тебе нужно подойти к преподу и выполнить то, что он скажет\n";
-            bot.getApi().sendMessage(chat_id,reply.str());
+            reply << "Для продолжения игры подойди к любому преподу, которого видишь в зале, и выполни то, что он скажет\n";
+            try {
+                bot.getApi().sendMessage(chat_id,reply.str());
+            }
+            catch (const std::runtime_error& re) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on sending got_to_prepod message to chat_id: " << chat_id << "\n";
+            } catch (const std::exception& ex) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on sending got_to_prepod message to chat_id: " << chat_id << "\n";
+            }
             //CHAT_ID_TO_USER_INFO[chat_id].state = WAITING;
         break;        
+        case RETURN_FROM_PREPOD:
+            reply << "Теперь ты можешь продолжать решать задачи\n";
+            try {
+                bot.getApi().sendMessage(chat_id,reply.str());
+            }
+            catch (const std::runtime_error& re) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on sending return_from_prepod message to chat_id: " << chat_id << "\n";
+            } catch (const std::exception& ex) {
+                std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                std::cout << "At time " << std::ctime(&sendTime) << "fail on sending return_from_prepod message to chat_id: " << chat_id << "\n";
+            }
+            ReadFromBackupUserInfo(CHAT_ID_TO_USER_INFO_BACKUP[chat_id].category);
+        break;
         default:
             discipline = db_api::Disciplines::PHY;
             break;
@@ -853,8 +1015,16 @@ int main(int argc, char* argv[]) {
                     reply << task.text << '\n';
 
                     std::cout << "sending text: <" << task.text << ">\n";
-
-                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+                    try {
+                        bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+                    }
+                    catch (const std::runtime_error& re) {
+                        std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                        std::cout << "At time " << std::ctime(&sendTime) << "fail on sending next question after answer to chat_id: " << chat_id << "\n";
+                    } catch (const std::exception& ex) {
+                        std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                        std::cout << "At time " << std::ctime(&sendTime) << "fail on sending next question after answer to chat_id: " << chat_id << "\n";
+                    }
 
                     if (!task.pic_name.empty()) {
                         std::string path_to_pic = path_to_pics +
@@ -866,14 +1036,14 @@ int main(int argc, char* argv[]) {
                         const auto iter_dir = path_to_pic.rfind('.');
                         mime_type += path_to_pic.substr(iter_dir + 1);
 
-                        std::cout << "sending photo 3: <" << path_to_pic << "> <" << mime_type
+                        std::cout << "At time " << std::ctime(&sendTime) << "sending photo 3: <" << path_to_pic << "> <" << mime_type
                                   << ">\n";
 
                         try {
                             bot.getApi().sendPhoto(
                                 chat_id, TgBot::InputFile::fromFile(path_to_pic, mime_type));
                         } catch (TgBot::TgException& tgex) {
-                            std::cout << "error sending photo:\n";
+                            std::cout << "At time " << std::ctime(&sendTime) << "error sending photo:\n";
                             std::cout << tgex.what() << std::endl;
 
                             reply.str("");
@@ -882,7 +1052,17 @@ int main(int argc, char* argv[]) {
                                      "Порешай пока другие и через какое то время попытайся "
                                      "вернуться к этому. Прости(\n";
 
-                            bot.getApi().sendMessage(chat_id, reply.str());
+                            try {
+                                bot.getApi().sendMessage(chat_id, reply.str());
+                            }
+                            catch (const std::runtime_error& re) {
+                                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                                std::cout << "At time " << std::ctime(&sendTime) << "fail on sending photo after answer to chat_id: " << chat_id << "\n";
+                            } catch (const std::exception& ex) {
+                                std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                                std::cout << "At time " << std::ctime(&sendTime) << "fail on sending photo after answer to chat_id: " << chat_id << "\n";
+                            }
+
                         } catch (const std::runtime_error& re) {
                             std::cout << "runtime error sending photo:\n";
                             std::cout << re.what() << std::endl;
@@ -894,7 +1074,16 @@ int main(int argc, char* argv[]) {
                                      "задания и "
                                      "через какое то время попытайся вернуться к этому. Прости(\n";
 
-                            bot.getApi().sendMessage(chat_id, reply.str());
+                            try {
+                                bot.getApi().sendMessage(chat_id, reply.str());
+                            }
+                            catch (const std::runtime_error& re) {
+                                std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                                std::cout << "At time " << std::ctime(&sendTime) << "fail on sending next question after answer to chat_id: " << chat_id << "\n";
+                            } catch (const std::exception& ex) {
+                                std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                                std::cout << "At time " << std::ctime(&sendTime) << "fail on sending next question after answer to chat_id: " << chat_id << "\n";
+                            }
                         }
                     }
                 
@@ -904,13 +1093,32 @@ int main(int argc, char* argv[]) {
 
                     CHAT_ID_TO_USER_INFO[chat_id].state = BotState::NO_DISCIPLINE_CHOSEN;
 
-                    bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+                    try {
+                        bot.getApi().sendMessage(chat_id, reply.str(), false, 0, disciplines_keyboard);
+                    }
+                    catch (const std::runtime_error& re) {
+                        std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                        std::cout << "At time " << std::ctime(&sendTime) << "fail on sending discipline keyboard after previous ends to chat_id: " << chat_id << "\n";
+                    } catch (const std::exception& ex) {
+                        std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                        std::cout << "At time " << std::ctime(&sendTime) << "fail on sending discipline keyboard after previous ends to chat_id: " << chat_id << "\n";
+                    }
                 }
 
             } else {
                 reply << "Ответ неправильный. Попытайся еще раз\n";
 
-                bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+               try {
+                   bot.getApi().sendMessage(chat_id, reply.str(), false, 0, tasks_keyboard);
+               }
+               catch (const std::runtime_error& re) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "fail on sending wrong_answer_message to chat_id: " << chat_id << "\n";
+                } catch (const std::exception& ex) {
+                    std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+                    std::cout << "At time " << std::ctime(&sendTime) << "fail on sending wrong_answer_message to chat_id: " << chat_id << "\n";
+                }
+               
             }
         }
 
@@ -921,25 +1129,27 @@ int main(int argc, char* argv[]) {
         std::cout << "Bot username: " << bot.getApi().getMe()->username.c_str() << "\n";
         }
     catch (const std::runtime_error& re) {
-        std::cerr << "Runtime error: " << re.what() << std::endl;
-
+        std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+        std::cout << "At time " << std::ctime(&sendTime) << "runtime error when trying get bot username\n";
     } catch (const std::exception& ex) {
-        std::cerr << "Error occurred: " << ex.what() << std::endl;
+        std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+        std::cout << "At time " << std::ctime(&sendTime) << "Error occurred when trying get bot username\n";
     }
 
     TgBot::TgLongPoll longPoll(bot);
 
     try {
         while (true) {
-            std::cout << "Long poll started\n";
+            std::cout << "At time " << std::ctime(&sendTime) << "Long poll started\n";
 
             longPoll.start();
         }
     } catch (const std::runtime_error& re) {
-        std::cerr << "Runtime error: " << re.what() << std::endl;
-
+        std::cerr << "At time " << std::ctime(&sendTime) << "Runtime error: " << re.what() << std::endl;
+        std::cout << "At time " << std::ctime(&sendTime) << "Runtime error when trying start longpoll\n";
     } catch (const std::exception& ex) {
-        std::cerr << "Error occurred: " << ex.what() << std::endl;
+        std::cerr << "At time " << std::ctime(&sendTime) << "Error occurred: " << ex.what() << std::endl;
+        std::cout << "At time " << std::ctime(&sendTime) << "Error occured while trying start longpoll\n";
     }
 
 
@@ -1189,25 +1399,25 @@ void SigHandler(int s) {
 void Logic(const Ins &i,db_api::Connector& conn) {
   switch (i.opcode) {
   case Ins::Opcode::STATISTICS: {
-    replyForCommand.clear();
+    replyForCommand.str("");
     SendNumberOfAnswers(AllAnswers,RightAnswers, i.imms[0], conn);    
     replyForCommand << "всего ответов: " << AllAnswers << "\nправильных ответов: " << RightAnswers << "\n";     
   } break;
   case Ins::Opcode::SETSTATE:{
-    replyForCommand.clear();
+    replyForCommand.str("");
     SetStateToUsers(i.imms[0], i.imms[1]);   
     replyForCommand << "user states changed\n";
   } break;
   case Ins::Opcode::PREPOD: {
-    replyForCommand.clear();
+    replyForCommand.str("");
     CreateBackupUserInfo(i.imms[0]);
-    SetStateToUsers(i.imms[1], i.imms[0]);
-    replyForCommand << "user sent to prepod\n";
+    SetStateToUsers(18, i.imms[0]);
+    replyForCommand << "users sent to prepod\n";
   } break;
   case Ins::Opcode::RETURN: {
-    replyForCommand.clear();
-    ReadFromBackupUserInfo(i.imms[0]);
-    replyForCommand << "Можешь возвращаться решать задачи\n";
+    replyForCommand.str("");
+    SetStateToUsers(19, i.imms[0]);
+    replyForCommand << "users return to solving\n";
   } break;
   case Ins::Opcode::BAN: {
     std::cout << "banned debil number " << i.imms[0] << "\n";

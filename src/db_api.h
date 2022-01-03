@@ -90,7 +90,7 @@ class Connector {
     int  RequestNumberTasks(const Disciplines& discipline, int grade);
 
     int RequestUserScore(const int user_id);
-
+    //std::vector<std::pair<std::string,int>> Connector::GetUsersWithScore();
     
 
   private:

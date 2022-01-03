@@ -14,7 +14,7 @@ namespace bot_utils {
 const std::vector<std::string> bad_words{
     "hui",   "huy",   "хуй",   "хуе",  "хуё",   "хуя",   "хуи",   "sosi",
     "sosat", "sasi",  "sasat", "соси", "сосат", "сасат", "лох",   "пидр",
-    "пидор", "пидар", "член",  "сука", "суч",   "дибил", "дебил",
+    "пидор", "пидар", "член",  "сука",  "дибил", "дебил",
 };
 
 const std::vector<int> funny_numbers{
